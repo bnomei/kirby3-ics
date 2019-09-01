@@ -6,6 +6,7 @@
 ![Issues](https://flat.badgen.net/packagist/ghi/bnomei/kirby3-ics?color=e6db74)
 [![Build Status](https://flat.badgen.net/travis/bnomei/kirby3-ics)](https://travis-ci.com/bnomei/kirby3-ics)
 [![Coverage Status](https://flat.badgen.net/coveralls/c/github/bnomei/kirby3-ics)](https://coveralls.io/github/bnomei/kirby3-ics) 
+[![Maintainability](https://flat.badgen.net/codeclimate/maintainability/bnomei/kirby3-ics)](https://codeclimate.com/github/bnomei/kirby3-ics) 
 [![Demo](https://flat.badgen.net/badge/website/examples?color=f92672)](https://kirby3-plugins.bnomei.com/ics) 
 [![Gitter](https://flat.badgen.net/badge/gitter/chat?color=982ab3)](https://gitter.im/bnomei-kirby-3-plugins/community) 
 [![Twitter](https://flat.badgen.net/badge/twitter/bnomei?color=66d9ef)](https://twitter.com/bnomei)
@@ -21,13 +22,13 @@ This plugin is free but if you use it in a commercial project please consider to
 
 ## Installation
 
-- unzip [master.zip](https://github.com/bnomei/kirby3-calendar/archive/master.zip) as folder `site/plugins/kirby3-calendar` or
-- `git submodule add https://github.com/bnomei/kirby3-calendar.git site/plugins/kirby3-calendar` or
-- `composer require bnomei/kirby3-calendar`
+- unzip [master.zip](https://github.com/bnomei/kirby3-ics/archive/master.zip) as folder `site/plugins/kirby3-ics` or
+- `git submodule add https://github.com/bnomei/kirby3-ics.git site/plugins/kirby3-ics` or
+- `composer require bnomei/kirby3-ics`
 
 ## Works well with
 
-- [ICS](https://github.com/bnomei/kirby3-ics)
+- [Calendar](https://github.com/bnomei/kirby3-calendar)
 - [Previews](https://github.com/sylvainjule/kirby-previews)
 
 ## Usecase
@@ -40,7 +41,7 @@ This plugin is free but if you use it in a commercial project please consider to
 
 ## Disclaimer
 
-This plugin is provided "as is" with no guarantee. Use it at your own risk and always test it yourself before using it in a production environment. If you find any issues, please [create a new issue](https://github.com/bnomei/kirby3-calendar/issues/new).
+This plugin is provided "as is" with no guarantee. Use it at your own risk and always test it yourself before using it in a production environment. If you find any issues, please [create a new issue](https://github.com/bnomei/kirby3-ics/issues/new).
 
 ## License
 
