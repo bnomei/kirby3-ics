@@ -117,7 +117,7 @@ $page->ics()->download(
 
 ## Dependencies
 
-- [kigkonsult/icalcreator](https://github.com/kigkonsult/icalcreator)
+- [iCalcreator/iCalcreator](https://github.com/iCalcreator/iCalcreator)
 
 ## Disclaimer
 
