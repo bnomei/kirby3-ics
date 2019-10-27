@@ -37,17 +37,19 @@ This plugin is free but if you use it in a commercial project please consider to
 ```php
 // automatic id
 $ics = new \Bnomei\ICS();
+$id = $ics->id();
+
+// or use custom id
+$id = sha1('myUniqueID');
 
 // provide custom options
 $ics = new \Bnomei\ICS([
-    Vcalendar::UNIQUE_ID => $this->id,
+    Vcalendar::UNIQUE_ID => $id,
 ]);
 
 // maybe reuse a static object identified by id
 // otherwise it will be created now
-$ics = \Bnomei\ICS::createOrLoad([
-    Vcalendar::UNIQUE_ID => $this->id,
-]);
+$ics = \Bnomei\ICS::createOrLoad($id);
 
 // get Vcalendar object...
 $vcalendar = $ics->vcalendar();

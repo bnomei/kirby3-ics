@@ -82,7 +82,7 @@ final class ICS
         self::$store[$id] = $data;
     }
 
-    public static function createOrLoad(string $id)
+    public static function createOrLoad(string $id): Vcalendar
     {
         if (! self::$store) {
             self::$store = [];
