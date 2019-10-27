@@ -15,7 +15,11 @@
     "kirby3-cms",
     "kirby3-plugin",
     "calendar",
+    "event",
     "events",
+    "alarm",
+    "organizer",
+    "attendee",
     "ics",
     "rfc2445",
     "rfc5545"
@@ -51,6 +55,12 @@
     "dist": [
       "composer install --no-dev --optimize-autoloader",
       "git rm -rf --cached .; git add .;"
+    ],
+    "kirby": [
+      "composer install",
+      "composer update",
+      "composer install --working-dir=tests/kirby --no-dev --optimize-autoloader",
+      "composer update --working-dir=tests/kirby"
     ]
   },
   "extra": {

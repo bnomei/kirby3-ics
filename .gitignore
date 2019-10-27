@@ -13,7 +13,7 @@
 /vendor/**/.*
 /vendor/**/*.json
 /vendor/**/*.txt
-/vendor/**/*.md``
+/vendor/**/*.md
 /vendor/**/*.yml
 /vendor/**/*.yaml
 /vendor/**/*.xml
@@ -30,3 +30,5 @@
 /vendor/**/php4/*
 /vendor/getkirby/composer-installer
 coverage.xml
+/vendor/**/releaseNotes
+/vendor/**/releaseNotes*
