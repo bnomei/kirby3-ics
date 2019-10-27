@@ -22,7 +22,9 @@
     "attendee",
     "ics",
     "rfc2445",
-    "rfc5545"
+    "rfc5545",
+    "ical",
+    "icalendar"
   ],
   "autoload": {
     "psr-4": {
