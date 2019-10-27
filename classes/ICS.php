@@ -82,19 +82,23 @@ final class ICS
         self::$store[$id] = $data;
     }
 
-    public static function createOrLoad(string $id): Vcalendar
+    /**
+     * @param string $id
+     * @return ICS
+     */
+    public static function createOrLoad(string $id): ICS
     {
         if (! self::$store) {
             self::$store = [];
         }
-        $vcalendar = A::get(self::$store, $id);
+        $ics = A::get(self::$store, $id);
 
-        if (! $vcalendar) {
-            $vcalendar = new self([
+        if (! $ics) {
+            $ics = new self([
                 Vcalendar::UNIQUE_ID => $id,
             ]);
         }
 
-        return $vcalendar;
+        return $ics;
     }
 }

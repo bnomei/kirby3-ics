@@ -2,7 +2,7 @@
   "name": "bnomei/kirby3-ics",
   "description": "Generate ICS Files",
   "type": "kirby-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "authors": [
     {
