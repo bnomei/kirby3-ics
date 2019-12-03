@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit63d19bb02a4eb7dc50412e7dc77c1355
+class ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd
 {
     public static $files = array (
         '47b18101462cdeb25f661813113e3182' => __DIR__ . '/..' . '/kigkonsult/icalcreator/autoload.php',
@@ -137,9 +137,9 @@ class ComposerStaticInit63d19bb02a4eb7dc50412e7dc77c1355
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit63d19bb02a4eb7dc50412e7dc77c1355::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit63d19bb02a4eb7dc50412e7dc77c1355::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit63d19bb02a4eb7dc50412e7dc77c1355::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd::$classMap;
 
         }, null, ClassLoader::class);
     }
