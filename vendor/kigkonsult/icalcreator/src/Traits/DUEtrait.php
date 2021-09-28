@@ -2,35 +2,36 @@
 /**
  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
- *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
 use DateTime;
+use DateTimeInterface;
+use Exception;
 use InvalidArgumentException;
 use Kigkonsult\Icalcreator\Util\DateTimeFactory;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
@@ -40,14 +41,12 @@ use Kigkonsult\Icalcreator\Util\Util;
 /**
  * DUE property functions
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @since 2.29.1 2019-06-24
+ * @since 2.29.16 2020-01-24
  */
 trait DUEtrait
 {
     /**
      * @var array component property DUE value
-     * @access protected
      */
     protected $due = null;
 
@@ -55,16 +54,21 @@ trait DUEtrait
      * Return formatted output for calendar component property due
      *
      * "The value type of the "DTEND" or "DUE" properties MUST match the value type of "DTSTART" property."
+     *
      * @return string
+     * @throws Exception
+     * @throws InvalidArgumentException
      * @since 2.29.1 2019-06-24
      */
-    public function createDue() {
+    public function createDue() : string
+    {
         if( empty( $this->due )) {
-            return null;
+            return Util::$SP0;
         }
         if( empty( $this->due[Util::$LCvalue] )) {
-            return ( $this->getConfig( self::ALLOWEMPTY ))
-                ? StringFactory::createElement( self::DUE ) : null;
+            return $this->getConfig( self::ALLOWEMPTY )
+                ? StringFactory::createElement( self::DUE )
+                : Util::$SP0;
         }
         $isDATE = ( ! empty( $this->dtstart ))
             ? ParameterFactory::isParamsValueSet( $this->dtstart, self::DATE )
@@ -73,7 +77,10 @@ trait DUEtrait
         return StringFactory::createElement(
             self::DUE,
             ParameterFactory::createParams( $this->due[Util::$LCparams] ),
-            DateTimeFactory::dateTime2Str( $this->due[Util::$LCvalue], $isDATE, $isLocalTime )
+            DateTimeFactory::dateTime2Str(
+                $this->due[Util::$LCvalue],
+                $isDATE, $isLocalTime
+            )
         );
     }
 
@@ -83,7 +90,8 @@ trait DUEtrait
      * @return bool
      * @since  2.27.1 - 2018-12-15
      */
-    public function deleteDue( ) {
+    public function deleteDue() : bool
+    {
         $this->due = null;
         return true;
     }
@@ -91,11 +99,12 @@ trait DUEtrait
     /**
      * Return calendar component property due
      *
-     * @param bool   $inclParam
+     * @param null|bool   $inclParam
      * @return bool|DateTime|array
      * @since  2.27.1 - 2018-12-12
      */
-    public function getDue( $inclParam = false ) {
+    public function getDue( $inclParam = false )
+    {
         if( empty( $this->due )) {
             return false;
         }
@@ -105,13 +114,15 @@ trait DUEtrait
     /**
      * Set calendar component property due
      *
-     * @param string|DateTime $value
-     * @param array           $params
+     * @param null|string|DateTimeInterface $value
+     * @param null|array           $params
      * @return static
-     * @throws \Exception
-     * @since 2.29.1 2019-06-24
+     * @throws Exception
+     * @throws InvalidArgumentException
+     * @since 2.29.16 2020-01-24
      */
-    public function setDue( $value  = null, $params = [] ) {
+    public function setDue( $value = null, $params = [] ) : self
+    {
         if( empty( $value )) {
             $this->assertEmptyValue( $value, self::DUE );
             $this->due = [
@@ -129,7 +140,10 @@ trait DUEtrait
         }
         $this->due = DateTimeFactory::setDate(
             $value,
-            ParameterFactory::setParams( $params, DateTimeFactory::$DEFAULTVALUEDATETIME )
+            ParameterFactory::setParams(
+                ( $params ?? [] ),
+                DateTimeFactory::$DEFAULTVALUEDATETIME
+            )
         );
         if( ! empty( $dtstart ) && Util::issetAndNotEmpty( $dtstart, Util::$LCvalue )) {
             DateTimeFactory::assertDatesAreInSequence(

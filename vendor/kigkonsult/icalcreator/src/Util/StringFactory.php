@@ -1,35 +1,36 @@
 <?php
 /**
-  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
- *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Util;
 
+use Kigkonsult\Icalcreator\IcalBase;
+use Kigkonsult\Icalcreator\Vcalendar;
 use UnexpectedValueException;
 
 use function bin2hex;
@@ -37,13 +38,16 @@ use function count;
 use function ctype_digit;
 use function explode;
 use function floor;
+use function implode;
 use function in_array;
 use function openssl_random_pseudo_bytes;
 use function ord;
 use function rtrim;
 use function sprintf;
+use function str_ireplace;
 use function str_replace;
 use function strlen;
+use function stripos;
 use function strpos;
 use function strrev;
 use function strtolower;
@@ -55,15 +59,12 @@ use function trim;
 /**
  * iCalcreator TEXT support class
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @since  2.29.14 - 2019-09-03
+ * @since  2.30.3 - 2021-02-14
  */
 class StringFactory
 {
-
     /**
      * @var string
-     * @static
      */
     public static $BS2 = '\\';
     public static $QQ  = '"';
@@ -73,10 +74,10 @@ class StringFactory
      *
      * @param array $rows
      * @return array
-     * @static
-     * @since  2.29.9 - 2019-03-30
+     * @since  2.29.20 - 2020-01-31
      */
-    public static function concatRows( $rows ) {
+    public static function concatRows( array $rows ) : array
+    {
         static $CHARs = [ ' ', "\t" ];
         $output = [];
         $cnt    = count( $rows );
@@ -85,20 +86,18 @@ class StringFactory
             $i1 = $i + 1;
             while(( $i < $cnt ) && isset( $rows[$i1] ) &&
                  ! empty( $rows[$i1] ) &&
-                in_array( $rows[$i1]{0}, $CHARs )) {
+                in_array( substr( $rows[$i1], 0, 1 ), $CHARs )) {
                 $i += 1;
                 $line .= rtrim( substr( $rows[$i], 1 ), Util::$CRLF );
                 $i1 = $i + 1;
-            }
+            } // end while
             $output[] = $line;
-        }
+        } // end for
         return $output;
     }
 
     /**
      * @var string
-     * @access private
-     * @static
      */
     private static $BEGIN_VCALENDAR = 'BEGIN:VCALENDAR';
     private static $END_VCALENDAR   = 'END:VCALENDAR';
@@ -111,10 +110,10 @@ class StringFactory
      * @param string|array $unParsedText strict rfc2445 formatted, single property string or array of strings
      * @return array
      * @throws UnexpectedValueException
-     * @static
      * @since  2.29.3 - 2019-08-29
      */
-    public static function conformParseInput( $unParsedText = null ) {
+    public static function conformParseInput( $unParsedText = null ) : array
+    {
         static $ERR10 = 'Only %d rows in calendar content :%s';
         $arrParse = false;
         if( is_array( $unParsedText )) {
@@ -133,9 +132,11 @@ class StringFactory
         }
         /* skip leading (empty/invalid) lines (and remove leading BOM chars etc) */
         $rows = self::trimLeadingRows( $rows );
-        $cnt = count( $rows );
+        $cnt  = count( $rows );
         if( 3 > $cnt ) { /* err 10 */
-            throw new UnexpectedValueException( sprintf( $ERR10, $cnt, PHP_EOL . implode( PHP_EOL, $rows )));
+            throw new UnexpectedValueException(
+                sprintf( $ERR10, $cnt, PHP_EOL . implode( PHP_EOL, $rows ))
+            );
         }
         /* skip trailing empty lines and ensure an end row */
         $rows = self::trimTrailingRows( $rows );
@@ -147,17 +148,17 @@ class StringFactory
      *
      * @param array $rows
      * @return array
-     * @static
      * @since  2.29.3 - 2019-08-29
      */
-    private static function trimLeadingRows( $rows ) {
+    private static function trimLeadingRows( array $rows ) : array
+    {
         foreach( $rows as $lix => $row ) {
             if( false !== stripos( $row, self::$BEGIN_VCALENDAR )) {
                 $rows[$lix] = self::$BEGIN_VCALENDAR;
                 break;
             }
             unset( $rows[$lix] );
-        }
+        } // end foreach
         return $rows;
     }
 
@@ -166,10 +167,10 @@ class StringFactory
      *
      * @param array $rows
      * @return array
-     * @static
      * @since  2.29.3 - 2019-08-29
      */
-    private static function trimTrailingRows( $rows ) {
+    private static function trimTrailingRows( array $rows ) : array
+    {
         $lix = array_keys( $rows );
         $lix = end( $lix );
         while( 3 < $lix ) {
@@ -199,10 +200,10 @@ class StringFactory
      *
      * @param string $text
      * @return array
-     * @static
      * @since  2.29.9 - 2019-03-30
      */
-    public static function convEolChar( & $text ) {
+    public static function convEolChar( string & $text ) : array
+    {
         static $BASEDELIM  = null;
         static $BASEDELIMs = null;
         static $EMPTYROW   = null;
@@ -233,15 +234,19 @@ class StringFactory
      * @param string $attributes property attributes
      * @param string $content    property content
      * @return string
-     * @static
      * @since  2.22.20 - 2017-01-30
      */
-    public static function createElement( $label, $attributes = null, $content = null ) {
+    public static function createElement(
+        string $label,
+        $attributes = null,
+        $content = null
+    ) : string
+    {
         $output = strtoupper( $label );
         if( ! empty( $attributes )) {
             $output .= trim( $attributes );
         }
-        $output .= Util::$COLON . trim( $content );
+        $output .= Util::$COLON . trim((string) $content );
         return self::size75( $output );
     }
 
@@ -249,16 +254,16 @@ class StringFactory
      * Return property name and (params+)value from (string) row
      *
      * @param  string $row
-     * @return array
-     * @static
+     * @return array   propName and the trailing part of the row
      * @since  2.29.11 - 2019-08-26
      */
-    public static function getPropName( $row ) {
+    public static function getPropName( string $row ) : array
+    {
         $sclnPos = strpos( $row, Util::$SEMIC );
         $clnPos  = strpos( $row, Util::$COLON );
         switch( true ) {
             case (( false === $sclnPos ) && ( false === $clnPos )) : // no params and no value
-                return [ $row, null ];
+                return [ $row, Util::$SP0 ];
                 break;
             case (( false !== $sclnPos ) && ( false === $clnPos )) : // param exist and NO value ??
                 $propName = self::before( Util::$SEMIC, $row );
@@ -266,13 +271,13 @@ class StringFactory
             case (( false === $sclnPos ) && ( false !== $clnPos )) : // no params
                 $propName = self::before( Util::$COLON, $row  );
                 break;
-            case ( $sclnPos < $clnPos ) :                            // param(s) with value ??
+            case ( $sclnPos < $clnPos ) :                            // param(s) and value ??
                 $propName = self::before( Util::$SEMIC, $row );
                 break;
             default : // ie $sclnPos > $clnPos                       // no params
                 $propName = self::before( Util::$COLON, $row );
                 break;
-        }
+        } // end switch
         return [ $propName, self::after( $propName, $row  ) ];
     }
 
@@ -281,16 +286,16 @@ class StringFactory
      *
      * @param int $cnt
      * @return string
-     * @static
      * @since  2.27.3 - 2018-12-28
      */
-    public static function getRandChars( $cnt ) {
+    public static function getRandChars( int $cnt ) : string
+    {
         $cnt = (int) floor( $cnt / 2 );
         $x   = 0;
         do {
             $randChars = bin2hex( openssl_random_pseudo_bytes( $cnt, $cStrong ));
             $x         += 1;
-        } while( ( 3 > $x ) && ( false == $cStrong ));
+        } while(( 3 > $x ) && ( false == $cStrong ));
         return $randChars;
     }
 
@@ -299,12 +304,12 @@ class StringFactory
      *
      * @param string $name
      * @return bool
-     * @static
      * @since  2.29.5 - 2019-08-30
      */
-    public static function isXprefixed( $name ) {
+    public static function isXprefixed( $name ) : bool
+    {
         static $X_ = 'X-';
-        return ( $X_ == strtoupper( substr( $name, 0, 2 ) ));
+        return ( $X_ == strtoupper( substr( $name, 0, 2 )));
     }
 
     /**
@@ -325,78 +330,90 @@ class StringFactory
      *
      * @param string $string
      * @return string
-     * @access private
-     * @static
      * @link   http://www.cl.cam.ac.uk/~mgk25/unicode.html#utf-8
-     * @since  2.22.23 - 2017-03-01
+     * @since  2.29.29 - 2020-09-11
      */
-    public static function size75( $string ) {
+    public static function size75( string $string ) : string
+    {
         static $LCN     = 'n';
         static $UCN     = 'N';
         static $SPBSLCN = ' \n';
         static $SP1     = ' ';
         $tmp    = $string;
-        $string = null;
+        $len    = strlen( $tmp );
+        $string = Util::$SP0;
         $cCnt   = $x = 0;
         while( true ) {
-            if( ! isset( $tmp[$x] )) {
+            $x1 = $x + 1;
+            if( $len < $x ) {
                 $string .= Util::$CRLF; // loop breakes here
                 break;
             }
-            elseif( ( 74 <= $cCnt ) &&
-                ( self::$BS2 == $tmp[$x] ) &&
-                ( ( $LCN == $tmp[$x + 1] ) || ( $UCN == $tmp[$x + 1] ))) {
+            elseif(( 74 <= $cCnt ) &&
+                ( self::$BS2 == substr( $tmp, $x, 1 )) && // '\\'
+                (( $LCN == substr( $tmp, $x1, 1 )) ||
+                    ( $UCN == substr( $tmp, $x1, 1 )))) {
                 $string .= Util::$CRLF . $SPBSLCN; // don't break lines inside '\n'
                 $x      += 2;
-                if( ! isset( $tmp[$x] )) {
+                if( $len < $x ) {
                     $string .= Util::$CRLF;
-                    break;              // or here...
+                    break; // or here...
                 }
                 $cCnt = 3;
             }
             elseif( 75 <= $cCnt ) {
-                $string .= Util::$CRLF . $SP1;
-                $cCnt   = 1;
+                // $string .= Util::$CRLF . $SP1;
+                $string .= Util::$CRLF;
+                if( $len == $x ) {
+                    break; // or here..
+                }
+                $string .= $SP1;
+                $cCnt    = 1;
             }
-            $byte   = ord( $tmp[$x] );
-            $string .= $tmp[$x];
+            $str1    = substr( $tmp, $x, 1 );
+            $byte    = ord( $str1 );
+            $string .= $str1;
             switch( true ) {
-                case( ( $byte >= 0x20 ) && ( $byte <= 0x7F )) :
+                case(( $byte >= 0x20 ) && ( $byte <= 0x7F )) :
                     $cCnt += 1;                    // characters U-00000000 - U-0000007F (same as ASCII)
                     break;                         // add a one byte character
-                case( ( $byte & 0xE0 ) == 0xC0 ) : // characters U-00000080 - U-000007FF, mask 110XXXXX
-                    if( isset( $tmp[$x + 1] )) {
+                case(( $byte & 0xE0 ) == 0xC0 ) : // characters U-00000080 - U-000007FF, mask 110XXXXX
+                    if( $len > ( $x + 1 )) {
                         $cCnt   += 1;
-                        $string .= $tmp[$x + 1];
-                        $x      += 1;              // add a two bytes character
+                        $x      += 1;              // add second byte of a two bytes character
+                        $string .= substr( $tmp, $x, 1 );
                     }
                     break;
-                case( ( $byte & 0xF0 ) == 0xE0 ) : // characters U-00000800 - U-0000FFFF, mask 1110XXXX
-                    if( isset( $tmp[$x + 2] )) {
+                case(( $byte & 0xF0 ) == 0xE0 ) : // characters U-00000800 - U-0000FFFF, mask 1110XXXX
+                    if( $len > ( $x + 2 )) {
                         $cCnt   += 1;
-                        $string .= $tmp[$x + 1] . $tmp[$x + 2];
-                        $x      += 2;              // add a three bytes character
+                        $x      += 1;
+                        $string .= substr( $tmp, $x1, 2 );
+                        $x      += 1;              // add byte 2-3 of a three bytes character
                     }
                     break;
-                case( ( $byte & 0xF8 ) == 0xF0 ) : // characters U-00010000 - U-001FFFFF, mask 11110XXX
-                    if( isset( $tmp[$x + 3] )) {
+                case(( $byte & 0xF8 ) == 0xF0 ) : // characters U-00010000 - U-001FFFFF, mask 11110XXX
+                    if( $len > ( $x + 3 )) {
                         $cCnt   += 1;
-                        $string .= $tmp[$x + 1] . $tmp[$x + 2] . $tmp[$x + 3];
-                        $x      += 3;              // add a four bytes character
+                        $x      += 1;
+                        $string .= substr( $tmp, $x1, 3 );
+                        $x      += 3;              // add byte 2-4 of a four bytes character
                     }
                     break;
-                case( ( $byte & 0xFC ) == 0xF8 ) : // characters U-00200000 - U-03FFFFFF, mask 111110XX
-                    if( isset( $tmp[$x + 4] )) {
+                case(( $byte & 0xFC ) == 0xF8 ) : // characters U-00200000 - U-03FFFFFF, mask 111110XX
+                    if( $len > ( $x + 4 )) {
                         $cCnt   += 1;
-                        $string .= $tmp[$x + 1] . $tmp[$x + 2] . $tmp[$x + 3] . $tmp[$x + 4];
-                        $x      += 4;              // add a five bytes character
+                        $x      += 1;
+                        $string .= substr( $tmp, $x, 4 );
+                        $x      += 4;              // add byte 2-5 of a five bytes character
                     }
                     break;
-                case( ( $byte & 0xFE ) == 0xFC ) : // characters U-04000000 - U-7FFFFFFF, mask 1111110X
-                    if( isset( $tmp[$x + 5] )) {
+                case(( $byte & 0xFE ) == 0xFC ) : // characters U-04000000 - U-7FFFFFFF, mask 1111110X
+                    if( $len > ( $x + 5 )) {
                         $cCnt   += 1;
-                        $string .= $tmp[$x + 1] . $tmp[$x + 2] . $tmp[$x + 3] . $tmp[$x + 4] . $tmp[$x + 5];
-                        $x      += 5;              // add a six bytes character
+                        $x      += 1;
+                        $string .= substr( $tmp, $x, 5 );
+                        $x      += 5;              // add byte 2-6 of a six bytes character
                     }
                     break;
                 default:                           // add any other byte without counting up $cCnt
@@ -410,60 +427,65 @@ class StringFactory
     /**
      * Return property value and attributes
      *
-     * Attributes are prefixed by ';', value by ':', BUT they may exists in attr/values
+     * Attributes are prefixed by ';', value by ':', BUT they may exists in attr/values (quoted?)
+     *
      * @param string $line     property content
+     * @param string $propName
      * @return array           [line, [*propAttr]]
-     * @static
-     * @todo   same as in CalAddressFactory::calAddressCheck() ??
      * @todo   fix 2-5 pos port number
-     * @since  2.29.11 - 2019-08-26
+     * @since  2.30.3 - 2021-02-14
      */
-    public static function splitContent( $line ) {
-        static $CSS    = '://';
-        static $EQ     = '=';
-        $clnPos        = strpos( $line, Util::$COLON );
+    public static function splitContent( string $line, $propName = null ) : array
+    {
+        static $CSS      = '://';
+        static $EQ       = '=';
+        static $URIprops = [ Vcalendar::SOURCE, Vcalendar::URL, Vcalendar::TZURL ];
+        $clnPos          = strpos( $line, Util::$COLON );
         if(( false === $clnPos )) {
             return [ $line, [] ]; // no params
         }
         if( 0 == $clnPos ) { // no params,  most frequent
             return [ substr( $line, 1 ) , [] ];
         }
-        $sclnPos       = strpos( $line, Util::$SEMIC );
-        if(( 0 === $sclnPos ) && ( 1 == substr_count( $line, Util::$SEMIC )) &&
-            ( 1 == substr_count( $line, Util::$COLON ))) {
-            // single param only (and no colons in param values), 2nd most frequent
+        if( ! empty( $propName ) && in_array( strtoupper( $propName ), $URIprops )) {
+            self::checkFixUriValue( $line );
+        }
+        if( self::checkSingleParam( $line )) { // one param
             $param = self::between( Util::$SEMIC, Util::$COLON, $line );
             return [
                 self::after( Util::$COLON, $line ),
                 [
-                    self::before( $EQ, $param ) => trim( self::after( $EQ, $param ), self::$QQ )
+                    self::before( $EQ, $param ) =>
+                        trim( self::after( $EQ, $param ), self::$QQ )
                 ]
             ];
-        }
-        /* more than one param here (or one tricky...) */
+        } // end if
+        /* more than one param here (or a tricky one...) */
         $attr          = [];
         $attrix        = -1;
         $WithinQuotes  = false;
         $len           = strlen( $line );
         $cix           = 0;
         while( $cix < $len ) {
+            $str1 = substr( $line, $cix, 1 );
+            $cix1 = $cix + 1;
             if( ! $WithinQuotes &&
-                ( Util::$COLON == $line[$cix] ) &&
-                ( $CSS != substr( $line, $cix, 3 )) &&
+                ( Util::$COLON == $str1 ) &&
+                ( $CSS != substr( $line, $cix, 3 )) && // '://'
                 ! self::colonIsPrefixedByProtocol( $line, $cix ) &&
-                ! self::hasPortNUmber( substr( $line, ( $cix + 1 ), 7 ))) {
-                $line = substr( $line, ( $cix + 1 ));
+                ! self::hasPortNUmber( substr( $line, $cix1, 7 ))) {
+                $line = substr( $line, $cix1 );
                 break;
             }
-            if( self::$QQ == $line[$cix] ) { // '"'
+            if( self::$QQ == $str1 ) { // '"'
                 $WithinQuotes = ! $WithinQuotes;
             }
-            if( Util::$SEMIC == $line[$cix] ) { // ';'
+            if( Util::$SEMIC == $str1 ) { // ';'
                 $attrix += 1;
                 $attr[$attrix] = null; // initiate
             }
             else {
-                $attr[$attrix] .= $line[$cix];
+                $attr[$attrix] .= $str1;
             }
             $cix += 1;
         } // end while...
@@ -479,6 +501,67 @@ class StringFactory
     }
 
     /**
+     * Return true if single param only (and no colons in param values)
+     *
+     * 2nd most frequent
+     *
+     * @param string $line
+     * @return bool
+     * @since  2.30.3 - 2021-02-14
+     */
+    private static function checkSingleParam( string $line ) : bool
+    {
+        if( 0 !== strpos( $line, Util::$SEMIC ))  {
+            return false;
+        }
+        return (( 1 == substr_count( $line, Util::$SEMIC )) &&
+            ( 1 == substr_count( $line, Util::$COLON )));
+    }
+
+    /**
+     * Replace opt value prefix 'VALUE=URI:message://' by ':' also (opt un-urldecoded) '<'|'>'|'@'
+
+     * orginating from any Apple device
+     *
+     * @param string $line
+     * @since  2.30.3 - 2021-02-14
+     */
+    public static function checkFixUriValue( string & $line )
+    {
+        static $VEQU     = ';VALUE=URI';
+        static $PFCHARS1 = '%3C';
+        static $SFCHARS1 = '%3E';
+        static $PFCHARS2 = '<';
+        static $SFCHARS2 = '>';
+        static $SCHAR31 = '%40';
+        static $SCHAR32 = '@';
+        if( false !== stripos( $line, $VEQU )) {
+            $line = str_ireplace( $VEQU, Util::$SP0, $line );
+        }
+        if(( false !== strpos( $line, $PFCHARS1 )) && ( false !== strpos( $line, $SFCHARS1 ))) {
+            $line = str_replace( [ $PFCHARS1, $SFCHARS1 ], Util::$SP0, $line );
+        }
+        elseif(( false !== strpos( $line, $PFCHARS2 )) && ( false !== strpos( $line, $SFCHARS2 ))) {
+            $line = str_replace( [ $PFCHARS2, $SFCHARS2 ], Util::$SP0, $line );
+        }
+        if( false !== strpos( $line, $SCHAR31 )) {
+            $line = str_replace( $SCHAR31, $SCHAR32, $line );
+        }
+    }
+
+    /**
+     * Protocols
+     */
+    public static $PROTO3 = [ 'cid:', 'sms:', 'tel:', 'urn:'  ]; // 'fax:' removed
+    public static $PROTO4 = [
+        'crid:', 'news:', 'pres:',
+        ':http:'
+    ];
+    public static $PROTO5 = [ 'https:' ];
+    public static $PROTO6 = [ 'mailto:', 'telnet:' ];
+    public static $PROTO7 = [ 'message:' ];
+
+    /**
      * Return bool true if colon-pos is prefixed by protocol
      *
      * @see  https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml overkill !!
@@ -486,20 +569,20 @@ class StringFactory
      * @param string $line
      * @param int    $cix
      * @return bool
-     * @accvess private
-     * @static
-     * @since  2.27.14 - 2019-02-20
+     * @since  2.30.2 - 2021-02-04
      */
-    private static function colonIsPrefixedByProtocol( $line, $cix ) {
+    private static function colonIsPrefixedByProtocol( string $line, int $cix ) : bool
+    {
+        static $CHT1PCSS = ':http://';
+        static $CHT2PCSS = ':https://';
         static $MSTZ   = [ 'utc-', 'utc+', 'gmt-', 'gmt+' ];
-        static $PROTO3 = [ 'cid:', 'sms:', 'tel:', 'urn:' ]; // 'fax:' removed
-        static $PROTO4 = [ 'crid:', 'news:', 'pres:' ];
-        static $PROTO5 = [ 'mailto:', 'telnet:' ];
         $line = strtolower( $line );
         return (( in_array( substr( $line, $cix - 6, 4 ), $MSTZ )) || // ?? -6
-                ( in_array( substr( $line, $cix - 3, 4 ), $PROTO3 )) ||
-                ( in_array( substr( $line, $cix - 4, 5 ), $PROTO4 )) ||
-                ( in_array( substr( $line, $cix - 6, 7 ), $PROTO5 )));
+                ( in_array( substr( $line, $cix - 3, 4 ), self::$PROTO3 )) ||
+                ( in_array( substr( $line, $cix - 4, 5 ), self::$PROTO4 )) ||
+                ( in_array( substr( $line, $cix - 5, 6 ), self::$PROTO5 )) ||
+                ( in_array( substr( $line, $cix - 6, 7 ), self::$PROTO6 )) ||
+                ( in_array( substr( $line, $cix - 7, 8 ), self::$PROTO7 )));
     }
 
     /**
@@ -507,20 +590,20 @@ class StringFactory
      *
      * @param string $string
      * @return bool
-     * @access private
-     * @static
-     * @since  2.27.14 - 2019-02-20
+     * @since  2.27.22 - 2020-09-01
      */
-    private static function hasPortNUmber( $string ) {
-        $len = strlen( $string );
+    private static function hasPortNUmber( string $string ) : bool
+    {
+        $len      = strlen( $string );
         for( $x = 0; $x < $len; $x++ ) {
-            if( ! ctype_digit( $string[$x] )) {
+            $str1 = substr( $string, $x, 1 );
+            if( ! ctype_digit( $str1 )) {
                 break;
             }
-            if( Util::$SLASH == $string[$x] ) {
+            if( Util::$SLASH == $str1 ) {
                 return true;
             }
-        }
+        } // end for
         return false;
     }
 
@@ -529,17 +612,16 @@ class StringFactory
      *
      * @param string $string
      * @return string
-     * @static
      * @since  2.27.14 - 2019-02-20
      */
-    public static function strrep( $string ) {
+    public static function strrep( string $string ) : string
+    {
         static $BSLCN    = '\n';
         static $SPECCHAR = [ 'n', 'N', 'r', ',', ';' ];
         static $SQ       = "'";
         static $QBSLCR   = "\r";
         static $QBSLCN   = "\n";
         static $BSUCN    = '\N';
-        $string = (string) $string;
         $strLen = strlen( $string );
         $pos    = 0;
         // replace single (solo-)backslash by double ones
@@ -548,11 +630,12 @@ class StringFactory
                 break;
             }
             if( ! in_array( substr( $string, $pos, 1 ), $SPECCHAR )) {
-                $string = substr( $string, 0, $pos ) . self::$BS2 . substr( $string, ( $pos + 1 ));
+                $string = substr( $string, 0, $pos ) .
+                    self::$BS2 . substr( $string, ( $pos + 1 ));
                 $pos += 1;
             }
             $pos += 1;
-        }
+        } // end while
         // replace double quote by single ones
         if( false !== strpos( $string, self::$QQ )) {
             $string = str_replace( self::$QQ, $SQ, $string );
@@ -562,12 +645,17 @@ class StringFactory
         foreach( [ Util::$COMMA, Util::$SEMIC ] as $char ) {
             $offset = 0;
             while( false !== ( $pos = strpos( $string, $char, $offset ))) {
-                if( ( 0 < $pos ) && ( self::$BS2 != substr( $string, ( $pos - 1 )))) {
-                    $string = substr( $string, 0, $pos ) . self::$BS2 . substr( $string, $pos );
+                if(( 0 < $pos ) && ( self::$BS2 != substr( $string, ( $pos - 1 )))) {
+                    $string = substr( $string, 0, $pos ) .
+                        self::$BS2 . substr( $string, $pos );
                 }
                 $offset = $pos + 2;
-            }
-            $string = str_replace( self::$BS2 . self::$BS2 . $char, self::$BS2 . $char, $string );
+            } // end while
+            $string = str_replace(
+                self::$BS2 . self::$BS2 . $char,
+                self::$BS2 . $char,
+                $string
+            );
         }
         // replace "\r\n" by '\n'
         if( false !== strpos( $string, Util::$CRLF )) {
@@ -595,10 +683,10 @@ class StringFactory
      *
      * @param string $string
      * @return string
-     * @static
      * @since  2.22.2 - 2015-06-25
      */
-    public static function strunrep( $string ) {
+    public static function strunrep( string $string ) : string
+    {
         static $BS4 = '\\\\';
         static $BSCOMMA = '\,';
         static $BSSEMIC = '\;';
@@ -613,12 +701,11 @@ class StringFactory
      *
      * @param string $value
      * @return string
-     * @static
      * @since  2.29.14 - 2019-09-03
      */
-    public static function trimTrailNL( $value ) {
+    public static function trimTrailNL( string $value ) : string
+    {
         static $NL = '\n';
-        $value = (string) $value;
         if( $NL == strtolower( substr( $value, -2 ))) {
             $value = substr( $value, 0, ( strlen( $value ) - 2 ));
         }
@@ -630,135 +717,313 @@ class StringFactory
      */
 
     /**
-     * Return substring after first needle in haystack
+     * @var string
+     */
+    private static $SP0 = '';
+
+    /**
+     * Return bool true if needle is in haystack
      *
-     * @link https://php.net/manual/en/function.substr.php#112707
+     * Case-sensitive search for needle in haystack
+     *
      * @param string $needle
      * @param string $haystack
-     * @return string
-     * @static
+     * @return bool
      */
-    public static function after( $needle, $haystack ) {
-        if( false !== ( $pos = strpos( $haystack, $needle ))) {
-            return substr( $haystack, $pos + strlen( $needle ));
-        }
-        else {
-            return '';
-        }
+    public static function isIn( string $needle, string $haystack ) : bool
+    {
+        return ( false !== ( $pos = strpos( $haystack, $needle )));
     }
 
     /**
-     * Return substring after last needle in haystack
+     * Return substring after first found needle in haystack, '' on not found
+     *
+     * Case-sensitive search for needle in haystack
      *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $needle
      * @param string $haystack
      * @return string
-     * @static
      */
-    public static function after_last( $needle, $haystack ) {
-        if( false !== ( $pos = self::strrevpos( $haystack, $needle ))) {
-            return substr( $haystack, $pos + strlen( $needle ));
+    public static function after( string $needle, string $haystack ) : string
+    {
+        if( ! self::isIn( $needle, $haystack )) {
+            return self::$SP0;
         }
-        else {
-            return '';
-        }
+        $pos = strpos( $haystack, $needle );
+        return substr( $haystack, $pos + strlen( $needle ));
     }
 
     /**
-     * Return substring before first needle in haystack
+     * Return substring after last found  needle in haystack, '' on not found
+     *
+     * Case-sensitive search for needle in haystack
      *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $needle
      * @param string $haystack
      * @return string
-     * @static
      */
-    public static function before( $needle, $haystack ) {
+    public static function afterLast( string $needle, string $haystack ) : string
+    {
+        if( ! self::isIn( $needle, $haystack )) {
+            return self::$SP0;
+        }
+        $pos = self::strrevpos( $haystack, $needle );
+        return substr( $haystack, $pos + strlen( $needle ));
+    }
+
+    /**
+     * Return substring before first found needle in haystack, '' on not found
+     *
+     * Case-sensitive search for needle in haystack
+     *
+     * @link https://php.net/manual/en/function.substr.php#112707
+     * @param string $needle
+     * @param string $haystack
+     * @return string
+     */
+    public static function before( string $needle, string $haystack ) : string
+    {
+        if( ! self::isIn( $needle, $haystack )) {
+            return self::$SP0;
+        }
         return substr( $haystack, 0, strpos( $haystack, $needle ));
     }
 
     /**
-     * Return substring before last needle in haystack
+     * Return substring before last needle in haystack, '' on not found
+     *
+     * Case-sensitive search for needle in haystack
      *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $needle
      * @param string $haystack
      * @return string
-     * @static
      */
-    public static function before_last( $needle, $haystack ) {
+    public static function beforeLast( string $needle, string $haystack ) : string
+    {
+        if( ! self::isIn( $needle, $haystack )) {
+            return self::$SP0;
+        }
         return substr( $haystack, 0, self::strrevpos( $haystack, $needle ));
     }
 
     /**
-     * Return substring between first needles in haystack
+     * Return substring between needles in haystack
+     *
+     * Case-sensitive search for needles in haystack
+     * If no needles found in haystack, '' is returned
+     * If only needle1 found, substring after is returned
+     * If only needle2 found, substring before is returned
      *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $needle1
      * @param string $needle2
      * @param string $haystack
      * @return string
-     * @static
      */
-    public static function between( $needle1, $needle2, $haystack ) {
-        return self::before( $needle2, self::after( $needle1, $haystack ));
+    public static function between(
+        string $needle1,
+        string $needle2,
+        string $haystack
+    ) : string
+    {
+        $exists1 = self::isIn( $needle1, $haystack );
+        $exists2 = self::isIn( $needle2, $haystack );
+        switch( true ) {
+            case ( ! $exists1 && ! $exists2 ) :
+                return self::$SP0;
+                break;
+            case ( $exists1  && ! $exists2 ) :
+                return self::after( $needle1, $haystack );
+                break;
+            case ( ! $exists1 && $exists2 ) :
+                return self::before( $needle2, $haystack );
+                break;
+            default :
+                return self::before( $needle2, self::after( $needle1, $haystack ));
+                break;
+        } // end switch
     }
 
     /**
      * Return substring between last needles in haystack
      *
+     * Case-sensitive search for needles in haystack
+     *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $needle1
      * @param string $needle2
      * @param string $haystack
      * @return string
-     * @static
      */
-    public static function between_last( $needle1, $needle2, $haystack ) {
-        return self::after_last( $needle1, self::before_last( $needle2, $haystack));
+    public static function betweenLast(
+        string $needle1,
+        string $needle2,
+        string $haystack
+    ) : string
+    {
+        return self::afterLast( $needle1, self::beforeLast( $needle2, $haystack ));
     }
 
     /**
-     * Return pos for reversed needle in reversed haystack ??
+     * Return int for length from start to last needle in haystack, false on not found
+     *
+     * Case-sensitive search for needle in haystack
      *
      * @link https://php.net/manual/en/function.substr.php#112707
      * @param string $haystack
      * @param string $needle
-     * @return int
-     * @static
+     * @return bool|int    bool false on needle not in haystack
      */
-    public static function strrevpos( $haystack, $needle ) {
-        if( false !== ( $rev_pos = strpos( strrev( $haystack ), strrev( $needle )))) {
-            return strlen( $haystack ) - $rev_pos - strlen( $needle );
-        }
-        else {
-            return false;
-        }
+    public static function strrevpos( string $haystack, string $needle )
+    {
+        return ( false !== ( $rev_pos = strpos( strrev( $haystack ), strrev( $needle ))))
+            ? ( strlen( $haystack ) - $rev_pos - strlen( $needle ))
+            : false;
     }
 
     /**
-     * Return bool true if haystack starts with needle
+     * Return bool true if haystack starts with needle, false on not found or to large
+     *
+     * Case-sensitive search for needle in haystack
      *
      * @param string $haystack
      * @param string $needle
-     * @param string $pos       if true contains lenght of needle
+     * @param string $len       if found contains length of needle
      * @return bool
-     * @static
-     * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
      * @since  2.29.11 - 2019-08-28
      */
-    public static function startsWith( $haystack, $needle, & $pos = null ) {
-        $pos = null;
+    public static function startsWith(
+        string $haystack,
+        string $needle,
+        & $len = null
+    ) : bool
+    {
+        $len       = null;
         $needleLen = strlen( $needle );
         if( $needleLen > strlen( $haystack )) {
             return false;
         }
         if( 0 === strpos( $haystack, $needle )) {
-            $pos = $needleLen;
+            $len = $needleLen;
             return true;
         }
         return false;
     }
 
+    /**
+     * Return bool true if haystack ends with needle, false on not found or to large
+     *
+     * Case-sensitive search for needle in haystack
+     *
+     * @param string $haystack
+     * @param string $needle
+     * @param string $len       if found contains length of needle
+     * @return bool
+     * @since  2.29.23 - 2020-07-28
+     */
+    public static function endsWith(
+        string $haystack,
+        string $needle,
+        & $len = null
+    ) : bool
+    {
+        $len       = null;
+        $needleLen = strlen( $needle );
+        if( $needleLen > strlen( $haystack )) {
+            return false;
+        }
+        if( $needle == substr( $haystack, ( 0 - $needleLen ))) {
+            $len = $needleLen;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Component properties method name utility methods
+     */
+
+    /**
+     * Return internal name for property
+     *
+     * @param string $propName
+     * @return string
+     * @since  2.27.1 - 2018-12-16
+     */
+    public static function getInternalPropName( string $propName ) : string
+    {
+        $internalName = strtolower( $propName );
+        if( false !== strpos( $internalName, Util::$MINUS )) {
+            $internalName = implode( explode( Util::$MINUS, $internalName ));
+        }
+        return $internalName;
+    }
+
+    /**
+     * Return method from format and propName
+     *
+     * @param string $format
+     * @param string $propName
+     * @return string
+     * @since  2.27.14 - 2019-02-18
+     */
+    public static function getMethodName( string $format, string $propName ) : string
+    {
+        return sprintf( $format, ucfirst( self::getInternalPropName( $propName )));
+    }
+
+    /**
+     * Return name for property set-method
+     *
+     * @param string $propName
+     * @return string
+     * @since  2.27.1 - 2018-12-16
+     */
+    public static function getSetMethodName( string $propName ) : string
+    {
+        static $FMT = 'set%s';
+        return self::getMethodName( $FMT, $propName );
+    }
+
+    /**
+     * Return name for property delete-method
+     *
+     * @param string $propName
+     * @return string
+     * @since  2.27.1 - 2019-01-17
+     */
+    public static function getCreateMethodName( string $propName ) : string
+    {
+        static $FMT = 'create%s';
+        return self::getMethodName( $FMT, $propName );
+    }
+
+    /**
+     * Return name for property get-method
+     *
+     * @param string $propName
+     * @return string
+     * @since  2.27.1 - 2018-12-12
+     */
+    public static function getGetMethodName( string $propName ) : string
+    {
+        static $FMT = 'get%s';
+        return self::getMethodName( $FMT, $propName );
+    }
+
+    /**
+     * Return name for property delete-method
+     *
+     * @param string $propName
+     * @return string
+     * @since  2.27.1 - 2018-12-12
+     */
+    public static function getDeleteMethodName( string $propName ) : string
+    {
+        static $FMT = 'delete%s';
+        return self::getMethodName( $FMT, $propName );
+    }
 }

@@ -1,39 +1,37 @@
 <?php
 /**
-  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
- *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator;
 
 /**
  * interface IcalInterface
  *
- * @author      Kjell-Inge Gustafsson <ical@kigkonsult.se>
  * @since  2.27.11 - 2019-01-02
  */
 interface IcalInterface
@@ -125,12 +123,10 @@ interface IcalInterface
     const COUNTER        = 'COUNTER';
     const DECLINECOUNTER = 'DECLINECOUNTER';
 
-
     /**
      * iCal property CALSCALE default value
      */
     const GREGORIAN      = 'GREGORIAN';
-
 
     /**
      * iCal global component parameter keywords
@@ -157,7 +153,6 @@ interface IcalInterface
     const TIME             = 'TIME';             // HHMMSS
     const URI              = 'URI';              // Section 3 of [RFC3986]
     const UTC_OFFSET       = 'UTC-OFFSET';       // ("+" / "-") time-hour time-minute [time-second
-
 
     /**
      * iCal component properties ATTENDEE/ORGANIZER parameter keywords
@@ -194,7 +189,6 @@ interface IcalInterface
     const DELEGATED        = 'DELEGATED';        // Vevent, Vtodo
     const IN_PROCESS       = 'IN-PROCESS';       // Vtodo
 
-
     /**
      * iCal component properties ATTENDEE ROLE parameter keywords
      */
@@ -208,7 +202,6 @@ interface IcalInterface
      */
     const FALSE            = 'FALSE';
     const TRUE             = 'TRUE';
-
 
     /**
      * iCal component properties RRULE, EXRULE 'RECUR' keywords
@@ -242,7 +235,6 @@ interface IcalInterface
     const TH               = 'TH';               // THURSDAY
     const FR               = 'FR';               // FRIDAY
     const SA               = 'SA';               // SATURDAY
-
 
     /**
      * iCal component property ACTION, IMAGE values
@@ -374,13 +366,11 @@ interface IcalInterface
     const DRAFT            = 'DRAFT';            // Vjournal
     const F_NAL            = 'FINAL';            // Vjournal
 
-
     /**
      * iCal component property TRANSP values
      */
     const OPAQUE           = 'OPAQUE';           // default
     const TRANSPARENT      = 'TRANSPARENT';
-
 
     /**
      * UTC DateTimezones
@@ -418,5 +408,4 @@ interface IcalInterface
     const UNIQUE_ID        = 'UNIQUE_ID';
     const PROPINFO         = 'PROPINFO';
     const SETPROPERTYNAMES = 'SETPROPERTYNAMES';
-
 }

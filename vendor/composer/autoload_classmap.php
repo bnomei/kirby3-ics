@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Bnomei\\ICS' => $baseDir . '/classes/ICS.php',
+    'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Kigkonsult\\Icalcreator\\CalendarComponent' => $vendorDir . '/kigkonsult/icalcreator/src/CalendarComponent.php',
     'Kigkonsult\\Icalcreator\\DScomponent' => $vendorDir . '/kigkonsult/icalcreator/src/DScomponent.php',
     'Kigkonsult\\Icalcreator\\Daylight' => $vendorDir . '/kigkonsult/icalcreator/src/Daylight.php',
@@ -77,6 +78,7 @@ return array(
     'Kigkonsult\\Icalcreator\\Util\\IcalvCardFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/IcalvCardFactory.php',
     'Kigkonsult\\Icalcreator\\Util\\ParameterFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/ParameterFactory.php',
     'Kigkonsult\\Icalcreator\\Util\\RecurFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/RecurFactory.php',
+    'Kigkonsult\\Icalcreator\\Util\\RecurFactory2' => $vendorDir . '/kigkonsult/icalcreator/src/Util/RecurFactory2.php',
     'Kigkonsult\\Icalcreator\\Util\\RegulateTimezoneFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/RegulateTimezoneFactory.php',
     'Kigkonsult\\Icalcreator\\Util\\RexdateFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/RexdateFactory.php',
     'Kigkonsult\\Icalcreator\\Util\\SelectFactory' => $vendorDir . '/kigkonsult/icalcreator/src/Util/SelectFactory.php',

@@ -1,32 +1,31 @@
 <?php
 /**
-  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
- *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
  * This file is a part of iCalcreator.
-*/
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 namespace Kigkonsult\Icalcreator\Util;
 
@@ -51,10 +50,9 @@ use function unlink;
 use function utf8_encode;
 
 /**
- * iCalcreator http support class, also rfc2368 support (iCal cal-address)
+ * iCalcreator http support class
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @since  2.29.4 - 2019-07-02
+ * @since  2.30.3 - 2021-02-14
  */
 class HttpFactory
 {
@@ -62,8 +60,6 @@ class HttpFactory
      * HTTP headers
      *
      * @var array $headers
-     * @access private
-     * @static
      */
     private static $headers = [
         'Content-Encoding: gzip',
@@ -82,24 +78,29 @@ class HttpFactory
      * @param bool      $utf8Encode
      * @param bool      $gzip
      * @param bool      $cdType true : Content-Disposition: attachment... (default), false : ...inline...
+     * @param string    $fileName
      * @return bool true on success, false on error
      * @throws Exception
-     * @static
+     * @since  2.29.15 - 2020-01-19
      */
     public static function returnCalendar(
         Vcalendar $calendar,
         $utf8Encode = false,
         $gzip       = false,
-        $cdType     = true
-    ) {
+        $cdType     = true,
+        $fileName   = null
+    ) : bool
+    {
         static $ICR = 'iCr';
-        $filename = self::getFakedFilename();
+        if( empty( $fileName ) ) {
+            $fileName = self::getFakedFilename();
+        }
         $output   = $calendar->createCalendar();
-        if( $utf8Encode ) {
+        if( $utf8Encode ?? false ) {
             $output = utf8_encode( $output );
         }
         $fsize = null;
-        if( $gzip ) {
+        if( $gzip ?? false ) {
             $output = gzencode( $output, 9 );
             $fsize  = strlen( $output );
             header( self::$headers[0] );
@@ -118,8 +119,8 @@ class HttpFactory
             header( sprintf( self::$headers[2], $fsize ));
         }
         header( self::$headers[3] );
-        $cdType = ( $cdType ) ? 4 : 5;
-        header( sprintf( self::$headers[$cdType], $filename ));
+        $cdType = ( $cdType ?? false ) ? 4 : 5;
+        header( sprintf( self::$headers[$cdType], $fileName ));
         header( self::$headers[6] );
         echo $output;
         return true;
@@ -128,14 +129,16 @@ class HttpFactory
     /**
      * Return faked filename
      *
-     * @return string $propName
-     * @access private
-     * @static
+     * @return string
      * @since  2.29.4 - 2019-07-02
      */
-    private static function getFakedFilename() {
+    private static function getFakedFilename() : string
+    {
         static $DOTICS = '.ics';
-        return date( DateTimeFactory::$YmdHis, intval( microtime( true ))) . $DOTICS;
+        return date(
+            DateTimeFactory::$YmdHis,
+            intval( microtime( true ))
+            ) . $DOTICS;
     }
 
     /**
@@ -143,15 +146,17 @@ class HttpFactory
      *
      * @param string $url
      * @throws InvalidArgumentException
-     * @static
      * @since  2.27.3 - 2018-12-28
      */
-    public static function assertUrl( $url ) {
+    public static function assertUrl( $url )
+    {
         static $UC   = '_';
         static $URN  = 'urn';
         static $HTTP = 'http://';
         static $MSG  = 'URL validity error #%d, \'%s\'';
-        $url2 = ( false !== strpos( $url, $UC )) ? str_replace( $UC, Util::$MINUS, $url ) : $url;
+        $url2 = ( false !== strpos( $url, $UC ))
+            ? str_replace( $UC, Util::$MINUS, $url )
+            : $url;
         $no   = 0;
         do {
             if( false !== filter_var( $url2, FILTER_VALIDATE_URL )) {
@@ -172,4 +177,26 @@ class HttpFactory
         }
     }
 
+    /**
+     * Set calendar component property uri; URL, TZURL, SOURCE
+     *
+     * @param array $valueProp
+     * @param string $value
+     * @param array  $params
+     * @return void
+     * @throws InvalidArgumentException
+     * @since  2.30.3 - 2021-02-14
+     */
+    public static function urlSet( & $valueProp, $value = null, $params = [] )
+    {
+        if( ! empty( $value )) {
+            StringFactory::checkFixUriValue( $value );
+            self::assertUrl( $value );
+        }
+        ParameterFactory::ifExistRemove( $params, Vcalendar::VALUE, Vcalendar::URI );
+        $valueProp = [
+            Util::$LCvalue  => $value,
+            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
+        ];
+    }
 }

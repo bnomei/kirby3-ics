@@ -41,6 +41,7 @@ class ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd
 
     public static $classMap = array (
         'Bnomei\\ICS' => __DIR__ . '/../..' . '/classes/ICS.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Kigkonsult\\Icalcreator\\CalendarComponent' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/CalendarComponent.php',
         'Kigkonsult\\Icalcreator\\DScomponent' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/DScomponent.php',
         'Kigkonsult\\Icalcreator\\Daylight' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Daylight.php',
@@ -111,6 +112,7 @@ class ComposerStaticInit491e638a5eef9e53f1ce44550339b2cd
         'Kigkonsult\\Icalcreator\\Util\\IcalvCardFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/IcalvCardFactory.php',
         'Kigkonsult\\Icalcreator\\Util\\ParameterFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/ParameterFactory.php',
         'Kigkonsult\\Icalcreator\\Util\\RecurFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/RecurFactory.php',
+        'Kigkonsult\\Icalcreator\\Util\\RecurFactory2' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/RecurFactory2.php',
         'Kigkonsult\\Icalcreator\\Util\\RegulateTimezoneFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/RegulateTimezoneFactory.php',
         'Kigkonsult\\Icalcreator\\Util\\RexdateFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/RexdateFactory.php',
         'Kigkonsult\\Icalcreator\\Util\\SelectFactory' => __DIR__ . '/..' . '/kigkonsult/icalcreator/src/Util/SelectFactory.php',

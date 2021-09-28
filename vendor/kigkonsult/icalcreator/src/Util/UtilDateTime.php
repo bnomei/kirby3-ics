@@ -1,33 +1,32 @@
 <?php
 /**
-  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
- *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Util;
 
 use DateTime;
@@ -46,13 +45,10 @@ use function substr;
 /**
  * iCalcreator DateTime support class
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
  * @since  2.29.1 - 2019-07-01
  */
 class UtilDateTime extends DateTime
 {
-
-
     /**
      * @var string default object instance date[-time] 'key'
      */
@@ -71,13 +67,14 @@ class UtilDateTime extends DateTime
     /**
      * Constructor for UtilDateTime
      *
-     * @param string       $time
-     * @param DateTimeZone $timezone
+     * @param null|string       $time
+     * @param null|DateTimeZone $timezone
      * @throws Exception
      * @since  2.27.8 - 2019-01-12
      */
-    public function __construct( $time = "now" , DateTimeZone $timezone = null ) {
-        parent::__construct( $time, $timezone );
+    public function __construct( $time = null , $timezone = null )
+    {
+        parent::__construct(( $time ?? DateTimeFactory::$NOW ), $timezone );
         $this->dateFormat = DateTimeFactory::$YMDHISe;
     }
 
@@ -110,7 +107,8 @@ class UtilDateTime extends DateTime
      * @return static
      * @since  2.26.2 - 2018-11-14
      */
-    public function getClone() {
+    public function getClone() : self
+    {
         return clone $this;
     }
 
@@ -120,7 +118,8 @@ class UtilDateTime extends DateTime
      * @return array
      * @since  2.23.20 - 2017-02-07
      */
-    public function getTime() {
+    public function getTime() : array
+    {
         static $H_I_S = 'H:i:s';
         $res = [];
         foreach( explode( Util::$COLON, $this->format( $H_I_S )) as $t ) {
@@ -135,7 +134,8 @@ class UtilDateTime extends DateTime
      * @param string $YmdHisString
      * @since  2.26.2 - 2018-11-14
      */
-    public function setDateTimeFromString( $YmdHisString ) {
+    public function setDateTimeFromString( string $YmdHisString )
+    {
         $this->setDate(
             (int) substr( $YmdHisString, 0, 4 ),
             (int) substr( $YmdHisString, 4, 2 ),
@@ -154,7 +154,8 @@ class UtilDateTime extends DateTime
      * @return string
      * @since  2.21.7 - 2015-03-07
      */
-    public function getTimezoneName() {
+    public function getTimezoneName() : string
+    {
         $tz = $this->getTimezone();
         return $tz->getName();
     }
@@ -166,7 +167,8 @@ class UtilDateTime extends DateTime
      * @return string
      * @since  2.21.7 - 2015-03-07
      */
-    public function format( $format = null ) {
+    public function format( $format = null ) : string
+    {
         if( empty( $format ) && isset( $this->dateFormat )) {
             $format = $this->dateFormat;
         }
@@ -182,10 +184,14 @@ class UtilDateTime extends DateTime
      * @return static
      * @throws Exception
      * @throws RuntimeException
-     * @static
      * @since  2.29.1 - 2019-07-01
      */
-    public static function factory( DateTime $date, $params = null, $dtstartTz = null ) {
+    public static function factory(
+        DateTime $date,
+        $params = null,
+        $dtstartTz = null
+    ) : self
+    {
         static $Y_M_D  = 'Y-m-d';
         static $MSG1   = '#%d Can\'t create DateTimeZone from \'%s\'';
         static $MSG2   = '#%d Can\'t create (to-)DateTime : \'%s\'';
@@ -196,26 +202,36 @@ class UtilDateTime extends DateTime
             $iCaldateTime = new UtilDateTime( $YmdHise );
         }
         catch( Exception $e ) {
-            throw new RuntimeException( sprintf( $MSG2, 3, $YmdHise ), null, $e ); // -- #1
+            throw new RuntimeException( sprintf( $MSG2, 3, $YmdHise ), $e->getCode(), $e ); // -- #1
         }
         if( Vcalendar::Z == $dtstartTz ) {
             $dtstartTz = Vcalendar::UTC;
         }
-        if( ! empty( $dtstartTz ) && ( $dtstartTz != $iCaldateTime->getTimezone()->getName())) {
+        if( ! empty( $dtstartTz ) &&
+            ( $dtstartTz != $iCaldateTime->getTimezone()->getName())) {
             // set the same timezone as dtstart
             if( $dtstartTz != $iCaldateTime->getTimezoneName()) {
                 try {
                     $timeZone = DateTimeZoneFactory::factory( $dtstartTz );
                 }
                 catch( Exception $e ) {
-                    throw new RuntimeException( sprintf( $MSG1, 5, $dtstartTz ), null, $e ); // -- #2
+                    throw new RuntimeException( // -- #2
+                        sprintf( $MSG1, 5, $dtstartTz ),
+                        $e->getCode(),
+                        $e
+                    );
                 }
-                if( false === $iCaldateTime->setTimezone( $timeZone )) {
-                    throw new RuntimeException( sprintf( $MSG4, 6, $dtstartTz )); // -- #3
+                if( false == $iCaldateTime->setTimezone( $timeZone )) {
+                    throw new RuntimeException(  // -- #3
+                        sprintf( $MSG4, 6, $dtstartTz )
+                    );
                 }
             }
         } // end if
-        if( ParameterFactory::isParamsValueSet( [ Util::$LCparams => $params ], Vcalendar::DATE )) {
+        if( ParameterFactory::isParamsValueSet(
+            [ Util::$LCparams => $params ],
+            Vcalendar::DATE )
+        ) {
             $iCaldateTime->dateFormat = $Y_M_D;
             $iCaldateTime->key        = $iCaldateTime->format( DateTimeFactory::$Ymd );
         }
@@ -224,5 +240,4 @@ class UtilDateTime extends DateTime
         }
         return $iCaldateTime;
     }
-
 }

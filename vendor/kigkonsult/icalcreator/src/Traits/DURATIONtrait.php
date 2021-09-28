@@ -2,32 +2,31 @@
 /**
  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
- *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
 use DateInterval;
@@ -43,14 +42,12 @@ use function is_array;
 /**
  * DURATION property functions
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
  * @since  2.27.3 - 2018-12-22
  */
 trait DURATIONtrait
 {
     /**
      * @var array component property DURATION value
-     * @access protected
      */
     protected $duration = null;
 
@@ -61,18 +58,21 @@ trait DURATIONtrait
      * @throws Exception
      * @since  2.29.2 - 2019-06-27
      */
-    public function createDuration() {
+    public function createDuration() : string
+    {
         if( empty( $this->duration )) {
-            return null;
+            return Util::$SP0;
         }
         if( empty( $this->duration[Util::$LCvalue] )) {
-            return ( $this->getConfig( self::ALLOWEMPTY ))
+            return $this->getConfig( self::ALLOWEMPTY )
                 ? StringFactory::createElement( self::DURATION )
-                : null;
+                : Util::$SP0;
         }
         if( DateIntervalFactory::isDateIntervalArrayInvertSet( $this->duration[Util::$LCvalue] )) { // fix pre 7.0.5 bug
             try {
-                $dateInterval = DateIntervalFactory::DateIntervalArr2DateInterval( $this->duration[Util::$LCvalue] );
+                $dateInterval = DateIntervalFactory::DateIntervalArr2DateInterval(
+                    $this->duration[Util::$LCvalue]
+                );
             }
             catch( Exception $e ) {
                 throw $e;
@@ -94,7 +94,8 @@ trait DURATIONtrait
      * @return bool
      * @since  2.27.1 - 2018-12-15
      */
-    public function deleteDuration( ) {
+    public function deleteDuration() : bool
+    {
         $this->duration = null;
         return true;
     }
@@ -102,13 +103,14 @@ trait DURATIONtrait
     /**
      * Get calendar component property duration
      *
-     * @param bool   $inclParam
-     * @param bool   $specform
+     * @param null|bool   $inclParam
+     * @param null|bool   $specform
      * @return bool|array|DateInterval
      * @throws Exception
      * @since  2.29.2 - 2019-06-29
      */
-    public function getDuration( $inclParam = false, $specform = false ) {
+    public function getDuration( $inclParam = false, $specform = false )
+    {
         if( empty( $this->duration )) {
             return false;
         }
@@ -117,7 +119,9 @@ trait DURATIONtrait
         }
         if( DateIntervalFactory::isDateIntervalArrayInvertSet( $this->duration[Util::$LCvalue] )) { // fix pre 7.0.5 bug
             try {
-                $value = DateIntervalFactory::DateIntervalArr2DateInterval( $this->duration[Util::$LCvalue] );
+                $value = DateIntervalFactory::DateIntervalArr2DateInterval(
+                    $this->duration[Util::$LCvalue]
+                );
             }
             catch( Exception $e ) {
                 throw $e;
@@ -136,14 +140,16 @@ trait DURATIONtrait
                 $params = array_merge( $params, $dtStart[Util::$LCparams] );
             }
         }
-        return ( $inclParam ) ? [ Util::$LCvalue  => $value, Util::$LCparams => (array) $params, ] : $value;
+        return ( $inclParam )
+            ? [ Util::$LCvalue  => $value, Util::$LCparams => (array) $params, ]
+            : $value;
     }
 
     /**
      * Set calendar component property duration
      *
-     * @param mixed $value
-     * @param array $params
+     * @param null|mixed $value
+     * @param null|array $params
      * @return static
      * @throws InvalidArgumentException
      * @throws Exception
@@ -153,7 +159,8 @@ trait DURATIONtrait
      *        "DURATION" property MUST be specified as a "dur-day" or "dur-week"
      *        value."
      */
-    public function setDuration( $value  = null, $params = [] ) {
+    public function setDuration( $value  = null, $params = [] ) : self
+    {
         switch( true ) {
             case ( empty( $value ) && ( empty( $params ) || is_array( $params ))) :
                 $this->assertEmptyValue( $value, self::DURATION );
@@ -162,7 +169,6 @@ trait DURATIONtrait
                     Util::$LCparams => []
                 ];
                 return $this;
-                break;
             case( $value instanceof DateInterval ) :
                 $value = DateIntervalFactory::conformDateInterval( $value );
                 break;
@@ -174,18 +180,21 @@ trait DURATIONtrait
                     $value        = DateIntervalFactory::conformDateInterval( $dateInterval );
                 }
                 catch( Exception $e ) {
-                    throw new InvalidArgumentException( $e->getMessage(), null, $e );
+                    throw new InvalidArgumentException( $e->getMessage(), $e->getCode(), $e );
                 }
                 break;
             default :
                 throw new InvalidArgumentException(
-                    sprintf( self::$FMTERRPROPFMT, self::DURATION, var_export( $value, true ))
+                    sprintf(
+                        self::$FMTERRPROPFMT,
+                        self::DURATION,
+                        var_export( $value, true )
+                    )
                 );
-                break;
         } // end switch
         $this->duration = [
             Util::$LCvalue  => (array) $value,  // fix pre 7.0.5 bug
-            Util::$LCparams => ParameterFactory::setParams( $params ),
+            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
         ];
         return $this;
     }

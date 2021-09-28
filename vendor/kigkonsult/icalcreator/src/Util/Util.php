@@ -1,33 +1,32 @@
 <?php
 /**
-  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
- *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Util;
 
 use InvalidArgumentException;
@@ -41,14 +40,12 @@ use function ucfirst;
 /**
  * iCalcreator utility/support class
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
  * @since  2.27.2 - 2018-12-21
  */
 class Util
 {
     /**
      * @var string  misc. values
-     * @static
      */
     public static $LCvalue       = 'value';
     public static $LCparams      = 'params';
@@ -71,10 +68,10 @@ class Util
      * @param string $compType   component name
      * @param array  $compList   list of components
      * @return bool
-     * @static
      * @since  2.26 - 2018-11-03
      */
-    public static function isCompInList( $compType, array $compList ) {
+    public static function isCompInList( string $compType, array $compList ) : bool
+    {
         if( empty( $compType )) {
             return false;
         }
@@ -87,10 +84,10 @@ class Util
      * @param string $propName   property name
      * @param array  $propList   list of properties
      * @return bool
-     * @static
      * @since  2.26 - 2018-11-04
      */
-    public static function isPropInList( $propName, array $propList ) {
+    public static function isPropInList( string $propName, array $propList ) : bool
+    {
         return in_array( strtoupper( $propName ), $propList);
     }
 
@@ -100,10 +97,10 @@ class Util
      * @param mixed  $array
      * @param string $key
      * @return bool
-     * @static
      * @since  2.26.14 - 2019-01-28
      */
-    public static function issetAndNotEmpty( $array = null, $key = null) {
+    public static function issetAndNotEmpty( $array = null, $key = null) : bool
+    {
         if( empty( $array ) ||
             ! is_array( $array ) ||
             ! array_key_exists( $key, $array )) {
@@ -119,11 +116,13 @@ class Util
      * @param string $key
      * @param string $value
      * @return bool
-     * @static
      * @since  2.26.14 - 2019-03-01
      */
-    public static function issetKeyAndEquals( $base, $key, $value ) {
-        if( empty( $base ) || ! is_array( $base ) || ! array_key_exists( $key, $base )) {
+    public static function issetKeyAndEquals( $base, string $key, string $value ) : bool
+    {
+        if( empty( $base ) ||
+            ! is_array( $base ) ||
+            ! array_key_exists( $key, $base )) {
             return false;
         }
         return ( $value == $base[$key] );
@@ -137,11 +136,14 @@ class Util
      * @param int $rangeMin
      * @param int $rangeMax
      * @throws InvalidArgumentException
-     * @access protected
-     * @static
      * @since  2.27.14 - 2019-02-19
      */
-    public static function assertInteger( $value, $propName, $rangeMin = null, $rangeMax = null ) {
+    public static function assertInteger(
+        $value,
+        string $propName,
+        $rangeMin = null,
+        $rangeMax = null
+    ) {
         static $ERR1 = '%s expects integer value, got %s';
         static $ERR2 = '%s value %s not in range (%d-%d)';
         if( ! is_scalar( $value ) || ! ctype_digit( (string) $value )) {
@@ -163,18 +165,24 @@ class Util
      *
      * @param mixed  $value
      * @param string $propName
+     * @return string
      * @throws InvalidArgumentException
-     * @access protected
-     * @static
      * @since  2.29.14 - 2019-09-03
      */
-    public static function assertString( $value, $propName ) {
+    public static function assertString( $value, string $propName ) : string
+    {
         static $ERR1 = '%s expects string value, got (%s) %s';
         if( ! is_scalar( $value )) {
             throw new InvalidArgumentException(
-                sprintf( $ERR1, $propName, gettype( $value ), var_export( $value, true ))
+                sprintf(
+                    $ERR1,
+                    $propName,
+                    gettype( $value ),
+                    var_export( $value, true )
+                )
             );
         }
+        return  (string) $value;
     }
 
     /**
@@ -184,16 +192,19 @@ class Util
      * @param array  $enumeration - all upper case
      * @param string $propName
      * @throws InvalidArgumentException
-     * @access protected
-     * @static
      * @since  2.27.2 - 2019-01-04
      */
-    public static function assertInEnumeration( $value, array $enumeration, $propName ) {
+    public static function assertInEnumeration(
+        $value,
+        array $enumeration,
+        string $propName
+    ) {
         static $ERR = 'Invalid %s value : %s';
         if( ! in_array( strtoupper( $value ), $enumeration )) {
-            throw new InvalidArgumentException( sprintf( $ERR, $propName, var_export( $value, true )));
+            throw new InvalidArgumentException(
+                sprintf( $ERR, $propName, var_export( $value, true ))
+            );
         }
     }
-
 }
 

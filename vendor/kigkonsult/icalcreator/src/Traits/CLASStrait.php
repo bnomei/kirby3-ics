@@ -2,32 +2,31 @@
 /**
  * iCalcreator, the PHP class package managing iCal (rfc2445/rfc5445) calendar information.
  *
- * copyright (c) 2007-2019 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
- * Link      https://kigkonsult.se
- * Package   iCalcreator
- * Version   2.29.14
- * License   Subject matter of licence is the software iCalcreator.
- *           The above copyright, link, package and version notices,
- *           this licence notice and the invariant [rfc5545] PRODID result use
- *           as implemented and invoked in iCalcreator shall be included in
- *           all copies or substantial portions of the iCalcreator.
- *
- *           iCalcreator is free software: you can redistribute it and/or modify
- *           it under the terms of the GNU Lesser General Public License as published
- *           by the Free Software Foundation, either version 3 of the License,
- *           or (at your option) any later version.
- *
- *           iCalcreator is distributed in the hope that it will be useful,
- *           but WITHOUT ANY WARRANTY; without even the implied warranty of
- *           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *           GNU Lesser General Public License for more details.
- *
- *           You should have received a copy of the GNU Lesser General Public License
- *           along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
- *
  * This file is a part of iCalcreator.
-*/
-
+ *
+ * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
+ * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @link      https://kigkonsult.se
+ * @license   Subject matter of licence is the software iCalcreator.
+ *            The above copyright, link, package and version notices,
+ *            this licence notice and the invariant [rfc5545] PRODID result use
+ *            as implemented and invoked in iCalcreator shall be included in
+ *            all copies or substantial portions of the iCalcreator.
+ *
+ *            iCalcreator is free software: you can redistribute it and/or modify
+ *            it under the terms of the GNU Lesser General Public License as
+ *            published by the Free Software Foundation, either version 3 of
+ *            the License, or (at your option) any later version.
+ *
+ *            iCalcreator is distributed in the hope that it will be useful,
+ *            but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *            GNU Lesser General Public License for more details.
+ *
+ *            You should have received a copy of the GNU Lesser General Public License
+ *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
+ */
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
 use InvalidArgumentException;
@@ -40,21 +39,17 @@ use function strtoupper;
 /**
  * CLASS property functions
  *
- * @author Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
  * @since 2.29.14 2019-09-03
  */
 trait CLASStrait
 {
     /**
      * @var array component property CLASS value
-     * @access protected
      */
     protected $class = null;
 
     /**
      * @var string
-     * @access protected
-     * @static
      */
     protected static $KLASS = 'class';
 
@@ -63,12 +58,15 @@ trait CLASStrait
      *
      * @return string
      */
-    public function createClass() {
+    public function createClass() : string
+    {
         if( empty( $this->{self::$KLASS} )) {
-            return null;
+            return Util::$SP0;
         }
         if( empty( $this->{self::$KLASS}[Util::$LCvalue] )) {
-            return ( $this->getConfig( self::ALLOWEMPTY )) ? StringFactory::createElement( self::KLASS ) : null;
+            return $this->getConfig( self::ALLOWEMPTY )
+                ? StringFactory::createElement( self::KLASS )
+                : Util::$SP0;
         }
         return StringFactory::createElement(
             self::KLASS,
@@ -83,7 +81,8 @@ trait CLASStrait
      * @return bool
      * @since  2.27.1 - 2018-12-15
      */
-    public function deleteClass( ) {
+    public function deleteClass() : bool
+    {
         $this->{self::$KLASS} = null;
         return true;
     }
@@ -91,27 +90,31 @@ trait CLASStrait
     /**
      * Get calendar component property class
      *
-     * @param bool   $inclParam
+     * @param null|bool   $inclParam
      * @return bool|array
      * @since  2.27.1 - 2018-12-12
      */
-    public function getClass( $inclParam = false ) {
+    public function getClass( $inclParam = false )
+    {
         if( empty( $this->{self::$KLASS} )) {
             return false;
         }
-        return ( $inclParam ) ? $this->{self::$KLASS} : $this->{self::$KLASS}[Util::$LCvalue];
+        return ( $inclParam )
+            ? $this->{self::$KLASS}
+        : $this->{self::$KLASS}[Util::$LCvalue];
     }
 
     /**
      * Set calendar component property class
      *
-     * @param string $value "PUBLIC" / "PRIVATE" / "CONFIDENTIAL" / iana-token / x-name
-     * @param array  $params
+     * @param null|string $value "PUBLIC" / "PRIVATE" / "CONFIDENTIAL" / iana-token / x-name
+     * @param null|array  $params
      * @return static
      * @throws InvalidArgumentException
      * @since 2.29.14 2019-09-03
      */
-    public function setClass( $value = null, $params = [] ) {
+    public function setClass( $value = null, $params = [] ) : self
+    {
         $STDVALUES = [
             self::P_BLIC,
             self::P_IVATE,
@@ -128,7 +131,7 @@ trait CLASStrait
         Util::assertString( $value, self::KLASS );
         $this->{self::$KLASS} = [
             Util::$LCvalue  => strtoupper( StringFactory::trimTrailNL((string) $value )),
-            Util::$LCparams => ParameterFactory::setParams( $params ),
+            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
         ];
         return $this;
     }
