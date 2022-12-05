@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,25 +29,24 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
+use Kigkonsult\Icalcreator\Formatter\Property\Geo;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\StringFactory;
 use Kigkonsult\Icalcreator\Util\Util;
 use Kigkonsult\Icalcreator\Util\GeoFactory;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
 
-use function floatval;
-use function is_array;
-
 /**
  * GEO property functions
  *
- * @since 2.27.3 2018-12-22
+ * @since 2.41.62 2022-08-28
  */
 trait GEOtrait
 {
     /**
-     * @var array component property GEO value
+     * @var null|Pc component property GEO value
      */
-    protected $geo = null;
+    protected ? Pc $geo = null;
 
     /**
      * Return formatted output for calendar component property geo
@@ -56,28 +55,10 @@ trait GEOtrait
      */
     public function createGeo() : string
     {
-        if( empty( $this->geo )) {
-            return Util::$SP0;
-        }
-        if( empty( $this->geo[Util::$LCvalue] )) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::GEO )
-                : Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return Geo::format(
             self::GEO,
-            ParameterFactory::createParams(
-                $this->geo[Util::$LCparams]
-            ),
-            GeoFactory::geo2str2(
-                $this->geo[Util::$LCvalue][self::LATITUDE],
-                GeoFactory::$geoLatFmt
-            ) .
-            Util::$SEMIC .
-            GeoFactory::geo2str2(
-                $this->geo[Util::$LCvalue][self::LONGITUDE],
-                GeoFactory::$geoLongFmt
-            )
+            $this->geo,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -97,31 +78,45 @@ trait GEOtrait
      * Get calendar component property geo
      *
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @return bool|array|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getGeo( $inclParam = false )
+    public function getGeo( ? bool $inclParam = false ) : bool | array | Pc
     {
         if( empty( $this->geo )) {
             return false;
         }
-        return ( $inclParam ) ? $this->geo : $this->geo[Util::$LCvalue];
+        return $inclParam ? clone $this->geo : $this->geo->value;
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.36 2022-04-03
+     */
+    public function isGeoSet() : bool
+    {
+        return ! empty( $this->geo->value );
     }
 
     /**
      * Get ISO6709 "Standard representation of geographic point location by coordinates"
      *
-     * Combining the LOCATION and GEO property values (only if GEO is set)
+     * Combining the (first) LOCATION and GEO property values (only if GEO is set)
      * @return bool|string
      * @since 2.27.14 2019-02-27
      */
-    public function getGeoLocation()
+    public function getGeoLocation() : bool | string
     {
         if( false === ( $geo = $this->getGeo())) {
             return false;
         }
+        if( ! method_exists( $this, StringFactory::getGetMethodName( self::LOCATION ))) {
+            return false;
+        }
         $loc     = $this->getLocation();
-        $content = ( empty( $loc )) ? Util::$SP0 : $loc . Util::$SLASH;
+        $content = ( empty( $loc )) ? self::$SP0 : $loc . Util::$SLASH;
         return $content .
             GeoFactory::geo2str2( $geo[self::LATITUDE], GeoFactory::$geoLatFmt ) .
             GeoFactory::geo2str2( $geo[self::LONGITUDE], GeoFactory::$geoLongFmt);
@@ -130,30 +125,33 @@ trait GEOtrait
     /**
      * Set calendar component property geo
      *
-     * @param null|mixed $latitude
-     * @param null|mixed $longitude
+     * @param null|int|float|string|Pc $latitude
+     * @param null|int|float|string $longitude
      * @param null|array $params
      * @return static
-     * @since 2.27.3 2018-12-22
+     * @since 2.41.62 2022-08-28
      */
-    public function setGeo( $latitude = null, $longitude = null, $params = [] ) : self
+    public function setGeo(
+        null|int|float|string|Pc $latitude = null,
+        null|int|float|string $longitude = null,
+        ? array $params = []
+    ) : static
     {
-        if( isset( $latitude ) && isset( $longitude )) {
-            if( ! is_array( $this->geo )) {
-                $this->geo = [];
-            }
-            $this->geo[Util::$LCvalue][self::LATITUDE]  = floatval( $latitude );
-            $this->geo[Util::$LCvalue][self::LONGITUDE] = floatval( $longitude );
-            $this->geo[Util::$LCparams]                 =
-                ParameterFactory::setParams( $params ?? [] );
-        }
-        else {
-            $this->assertEmptyValue( $latitude, self::GEO );
-            $this->geo = [
-                Util::$LCvalue  => Util::$SP0,
-                Util::$LCparams => [],
-            ];
-        }
+        switch( true ) {
+            case ( null === $latitude ) :
+                $this->assertEmptyValue( $latitude, self::GEO );
+                $this->geo = Pc::factory();
+                return $this;
+            case ( $latitude instanceof Pc ) :
+                $value = clone $latitude;
+                break;
+            default :
+                $value = Pc::factory(
+                    [ self::LATITUDE  => (float) $latitude, self::LONGITUDE => (float) $longitude ],
+                    ParameterFactory::setParams( $params )
+                );
+        } // end switch
+        $this->geo = $value;
         return $this;
     }
 }

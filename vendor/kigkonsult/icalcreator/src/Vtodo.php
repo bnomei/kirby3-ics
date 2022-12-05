@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,68 +29,123 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator;
 
+use DateInterval;
+use DateTimeInterface;
 use Exception;
+use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Vtodo as Formatter;
 
-use function sprintf;
-use function strtoupper;
+use function array_keys;
 
 /**
  * iCalcreator VTODO component class
  *
- * @since  2.29.9 - 2019-08-05
+ * @since  2.41.55 - 2022-08-13
  */
-final class Vtodo extends VetComponent
+final class Vtodo extends V3component
 {
-    use Traits\ATTACHtrait,
-        Traits\ATTENDEEtrait,
-        Traits\CATEGORIEStrait,
-        Traits\CLASStrait,
-        Traits\COLORrfc7986trait,
-        Traits\COMMENTtrait,
-        Traits\COMPLETEDtrait,
-        Traits\CONFERENCErfc7986trait,
-        Traits\CONTACTtrait,
-        Traits\CREATEDtrait,
-        Traits\DESCRIPTIONtrait,
-        Traits\DTSTAMPtrait,
-        Traits\DTSTARTtrait,
-        Traits\DUEtrait,
-        Traits\DURATIONtrait,
-        Traits\EXDATEtrait,
-        Traits\EXRULEtrait,
-        Traits\GEOtrait,
-        Traits\IMAGErfc7986trait,
-        Traits\LAST_MODIFIEDtrait,
-        Traits\LOCATIONtrait,
-        Traits\ORGANIZERtrait,
-        Traits\PERCENT_COMPLETEtrait,
-        Traits\PRIORITYtrait,
-        Traits\RDATEtrait,
-        Traits\RECURRENCE_IDtrait,
-        Traits\RELATED_TOtrait,
-        Traits\REQUEST_STATUStrait,
-        Traits\RESOURCEStrait,
-        Traits\RRULEtrait,
-        Traits\SEQUENCEtrait,
-        Traits\STATUStrait,
-        Traits\SUMMARYtrait,
-        Traits\UIDrfc7986trait,
-        Traits\URLtrait;
+    use Traits\ATTACHtrait;
+    use Traits\ATTENDEEtrait;
+    use Traits\CATEGORIEStrait;
+    use Traits\CLASStrait;
+    use Traits\COLORrfc7986trait;
+    use Traits\COMMENTtrait;
+    use Traits\COMPLETEDtrait;
+    use Traits\CONFERENCErfc7986trait;
+    use Traits\CONTACTtrait;
+    use Traits\CREATEDtrait;
+    use Traits\DESCRIPTIONtrait;
+    use Traits\DTSTARTtrait;
+    use Traits\DUEtrait;
+    use Traits\DURATIONtrait;
+    use Traits\EXDATEtrait;
+    use Traits\EXRULEtrait;
+    use Traits\GEOtrait;
+    use Traits\IMAGErfc7986trait;
+    use Traits\LAST_MODIFIEDtrait;
+    use Traits\LOCATIONtrait;
+    use Traits\ORGANIZERtrait;
+    use Traits\PERCENT_COMPLETEtrait;
+    use Traits\PRIORITYtrait;
+    use Traits\RDATEtrait;
+    use Traits\RECURRENCE_IDtrait;
+    use Traits\RELATED_TOtrait;
+    use Traits\REQUEST_STATUStrait;
+    use Traits\RESOURCEStrait;
+    use Traits\RRULEtrait;
+    use Traits\SEQUENCEtrait;
+    use Traits\STATUStrait;
+    use Traits\STRUCTURED_DATArfc9073trait;
+    use Traits\STYLED_DESCRIPTIONrfc9073trait;
+    use Traits\SUMMARYtrait;
+    use Traits\UIDrfc7986trait;
+    use Traits\URLtrait;
 
     /**
      * @var string
      */
-    protected static $compSgn = 't';
+    protected static string $compSgn = 't';
+
+    /**
+     * Constructor
+     *
+     * @param null|array $config
+     * @throws Exception
+     * @since  2.41.53 - 2022-08-11
+     */
+    public function __construct( ? array $config = [] )
+    {
+        parent::__construct( $config );
+        $this->setDtstamp();
+        $this->setUid();
+    }
+
+    /**
+     * Return Vtodo object instance
+     *
+     * @param null|array $config
+     * @param null|string|DateTimeInterface $dtstart
+     * @param null|string|DateTimeInterface $due   one of due or duration
+     * @param null|string|DateInterval $duration
+     * @param null|string $summary
+     * @return Vtodo
+     * @throws InvalidArgumentException
+     * @throws Exception
+     * @since  2.41.53 - 2022-08-08
+     */
+    public static function factory(
+        ? array $config = [],
+        null|string|DateTimeInterface $dtstart = null,
+        null|string|DateTimeInterface $due = null,
+        null|string|DateInterval $duration = null,
+        ? string $summary = null
+    ) : Vtodo
+    {
+        $instance = new Vtodo( $config );
+        if( null !== $dtstart ) {
+            $instance->setDtstart( $dtstart );
+        }
+        if( null !== $due ) {
+            $instance->setDue( $due );
+        }
+        elseif( null !== $duration ) {
+            $instance->setDuration( $duration );
+        }
+        if( null !== $summary ) {
+            $instance->setSummary( $summary );
+        }
+        return $instance;
+    }
 
     /**
      * Destructor
      *
-     * @since  2.29.9 - 2019-08-05
+     * @since 2.41.3 2022-01-17
      */
     public function __destruct()
     {
         if( ! empty( $this->components )) {
-            foreach( $this->components as $cix => $component ) {
+            foreach( array_keys( $this->components ) as $cix ) {
                 $this->components[$cix]->__destruct();
             }
         }
@@ -98,7 +153,6 @@ final class Vtodo extends VetComponent
             $this->compType,
             $this->xprop,
             $this->components,
-            $this->unparsed,
             $this->config,
             $this->propIx,
             $this->compix,
@@ -141,6 +195,8 @@ final class Vtodo extends VetComponent
             $this->rrule,
             $this->sequence,
             $this->status,
+            $this->structureddata,
+            $this->styleddescription,
             $this->summary,
             $this->uid,
             $this->url
@@ -152,49 +208,10 @@ final class Vtodo extends VetComponent
      *
      * @return string
      * @throws Exception  (on Duration/Rdate err)
-     * @since  2.29.9 - 2019-08-05
+     * @since  2.41.55 - 2022-08-13
      */
     public function createComponent() : string
     {
-        $compType    = strtoupper( $this->getCompType());
-        $component   = sprintf( self::$FMTBEGIN, $compType );
-        $component  .= $this->createUid();
-        $component  .= $this->createDtstamp();
-        $component  .= $this->createAttach();
-        $component  .= $this->createAttendee();
-        $component  .= $this->createCategories();
-        $component  .= $this->createClass();
-        $component  .= $this->createColor();
-        $component  .= $this->createComment();
-        $component  .= $this->createConference();
-        $component  .= $this->createCompleted();
-        $component  .= $this->createContact();
-        $component  .= $this->createCreated();
-        $component  .= $this->createDescription();
-        $component  .= $this->createDtstart();
-        $component  .= $this->createDue();
-        $component  .= $this->createDuration();
-        $component  .= $this->createExdate();
-        $component  .= $this->createExrule();
-        $component  .= $this->createImage();
-        $component  .= $this->createGeo();
-        $component  .= $this->createLastmodified();
-        $component  .= $this->createLocation();
-        $component  .= $this->createOrganizer();
-        $component  .= $this->createPercentcomplete();
-        $component  .= $this->createPriority();
-        $component  .= $this->createRdate();
-        $component  .= $this->createRelatedto();
-        $component  .= $this->createRequeststatus();
-        $component  .= $this->createRecurrenceid();
-        $component  .= $this->createResources();
-        $component  .= $this->createRrule();
-        $component  .= $this->createSequence();
-        $component  .= $this->createStatus();
-        $component  .= $this->createSummary();
-        $component  .= $this->createUrl();
-        $component  .= $this->createXprop();
-        $component  .= $this->createSubComponent();
-        return $component . sprintf( self::$FMTEND, $compType );
+        return Formatter::format( $this );
     }
 }

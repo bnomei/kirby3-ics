@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,24 +29,23 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\Util\StringFactory;
+use Kigkonsult\Icalcreator\Formatter\Property\IntProperty;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\Util;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
 use InvalidArgumentException;
 
-use function is_numeric;
-
 /**
  * PERCENT-COMPLETE property functions
  *
- * @since 2.27.3 2018-12-22
+ * @since 2.41.55 2022-08-13
  */
 trait PERCENT_COMPLETEtrait
 {
     /**
-     * @var array component property PERCENT_COMPLETE value
+     * @var null|Pc component property PERCENT_COMPLETE value
      */
-    protected $percentcomplete = null;
+    protected ? Pc $percentcomplete = null;
 
     /**
      * Return formatted output for calendar component property percent-complete
@@ -55,20 +54,10 @@ trait PERCENT_COMPLETEtrait
      */
     public function createPercentcomplete() : string
     {
-        if( empty( $this->percentcomplete )) {
-            return Util::$SP0;
-        }
-        if( ! isset( $this->percentcomplete[Util::$LCvalue] ) ||
-            ( empty( $this->percentcomplete[Util::$LCvalue] ) &&
-                ! is_numeric( $this->percentcomplete[Util::$LCvalue] ))) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::PERCENT_COMPLETE )
-                : Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return IntProperty::format(
             self::PERCENT_COMPLETE,
-            ParameterFactory::createParams( $this->percentcomplete[Util::$LCparams] ),
-            $this->percentcomplete[Util::$LCvalue]
+            $this->percentcomplete,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -88,42 +77,56 @@ trait PERCENT_COMPLETEtrait
      * Get calendar component property percent-complete
      *
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @return bool|int|string|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getPercentcomplete( $inclParam = false )
+    public function getPercentcomplete( ? bool $inclParam = false ) : bool | int | string | Pc
     {
         if( empty( $this->percentcomplete )) {
             return false;
         }
-        return ( $inclParam )
-            ? $this->percentcomplete
-            : $this->percentcomplete[Util::$LCvalue];
+        return $inclParam ? clone $this->percentcomplete : $this->percentcomplete->value;
+    }
+
+    /**
+     * Return bool true if set
+     *
+     * @return bool
+     * @since 2.41.43 2022-04-15
+     */
+    public function isPercentcompleteSet() : bool
+    {
+        return ( ! empty( $this->percentcomplete->value ) ||
+            (( null !== $this->percentcomplete ) && ( 0 === $this->percentcomplete->value )));
     }
 
     /**
      * Set calendar component property percent-complete
      *
-     * @param null|int   $value
+     * .. a positive integer between 0 and
+     * 100.  A value of "0" indicates the to-do has not yet been started.
+     * A value of "100" indicates that the to-do has been completed.
+     *
+     * @param null|int|string|Pc  $value  0 accepted
      * @param null|array $params
      * @return static
      * @throws InvalidArgumentException
-     * @since 2.27.3 2018-12-22
+     * @since 2.41.36 2022-04-03
      */
-    public function setPercentcomplete( $value = null, $params = [] ) : self
+    public function setPercentcomplete( null|int|string|Pc $value = null, ? array $params = [] ) : static
     {
-        if( empty( $value ) && ! is_numeric( $value )) {
-            $this->assertEmptyValue( $value, self::PERCENT_COMPLETE );
-            $value  = Util::$SP0;
-            $params = [];
+        $value = ( $value instanceof Pc )
+            ? clone $value
+            : Pc::factory( $value, ParameterFactory::setParams( $params ));
+        if(( $value->value === null ) || ( Util::$SP0 === $value->value )) {
+            $this->assertEmptyValue( $value->value, self::PERCENT_COMPLETE );
+            $value->setEmpty();
         }
         else {
-            Util::assertInteger( $value, self::PERCENT_COMPLETE, 0, 100 );
+            Util::assertInteger( $value->value, self::PERCENT_COMPLETE, 0, 100 );
+            $value->value = (int) $value->value;
         }
-        $this->percentcomplete = [
-            Util::$LCvalue  => $value,
-            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
-        ];
+        $this->percentcomplete = $value;
         return $this;
     }
 }

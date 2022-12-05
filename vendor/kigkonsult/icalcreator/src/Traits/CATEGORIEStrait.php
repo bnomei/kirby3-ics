@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,83 +29,37 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\CalendarComponent;
-use Kigkonsult\Icalcreator\Util\StringFactory;
+use Kigkonsult\Icalcreator\Formatter\Property\MultiProps;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Util\ParameterFactory;
 use InvalidArgumentException;
 
 /**
  * CATEGORIES property functions
  *
- * @since 2.29.14 2019-09-03
+ * @since 2.41.55 2022-08-13
  */
 trait CATEGORIEStrait
 {
     /**
-     * @var array component property CATEGORIES value
+     * @var null|Pc[] component property CATEGORIES value
      */
-    protected $categories = null;
+    protected ? array $categories = null;
 
     /**
      * Return formatted output for calendar component property categories
      *
      * @return string
-     * @since  2.29.11 - 2019-08-30
+     * @since 2.41.55 2022-08-13
      */
     public function createCategories() : string
     {
-        return self::createCatRes(
+        return MultiProps::format(
             self::CATEGORIES,
-            $this->categories,
-            $this->getConfig( self::LANGUAGE ),
+            $this->categories ?? [],
             $this->getConfig( self::ALLOWEMPTY ),
-            [ self::LANGUAGE ]
+            $this->getConfig( self::LANGUAGE )
         );
-    }
-
-    /**
-     * Return formatted output for calendar component properties categories/resources
-     *
-     * @param string $propName
-     * @param null|array  $pValArr
-     * @param bool|string $lang   bool false on not config lang found
-     * @param bool   $allowEmpty
-     * @param array  $specPkeys
-     * @return string
-     * @since  2.29.13 - 2019-09-03
-     */
-    private static function createCatRes(
-        string $propName,
-        $pValArr,
-        $lang,
-        bool $allowEmpty,
-        array $specPkeys
-    ) : string
-    {
-        if( empty( $pValArr )) {
-            return Util::$SP0;
-        }
-        $output = Util::$SP0;
-        foreach( $pValArr as $cx => $valuePart ) {
-            if( empty( $valuePart[Util::$LCvalue] )) {
-                if( $allowEmpty) {
-                    $output .= StringFactory::createElement( $propName );
-                }
-                continue;
-            }
-            $content = StringFactory::strrep( $valuePart[Util::$LCvalue] );
-            $output .= StringFactory::createElement(
-                $propName,
-                ParameterFactory::createParams(
-                    $valuePart[Util::$LCparams],
-                    $specPkeys,
-                    $lang
-                ),
-                $content
-            );
-        }
-        return $output;
     }
 
     /**
@@ -115,13 +69,13 @@ trait CATEGORIEStrait
      * @return bool
      * @since  2.27.1 - 2018-12-15
      */
-    public function deleteCategories( $propDelIx = null ) : bool
+    public function deleteCategories( ? int $propDelIx = null ) : bool
     {
         if( empty( $this->categories )) {
             unset( $this->propDelIx[self::CATEGORIES] );
             return false;
         }
-        return CalendarComponent::deletePropertyM(
+        return self::deletePropertyM(
             $this->categories,
             self::CATEGORIES,
             $this,
@@ -134,16 +88,16 @@ trait CATEGORIEStrait
      *
      * @param null|int    $propIx specific property in case of multiply occurrence
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @return bool|string|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getCategories( $propIx = null, $inclParam = false )
+    public function getCategories( ? int $propIx = null, ? bool $inclParam = false ) : bool | string | Pc
     {
         if( empty( $this->categories )) {
             unset( $this->propIx[self::CATEGORIES] );
             return false;
         }
-        return  CalendarComponent::getPropertyM(
+        return self::getMvalProperty(
             $this->categories,
             self::CATEGORIES,
             $this,
@@ -153,30 +107,53 @@ trait CATEGORIEStrait
     }
 
     /**
+     * Return array, all calendar component property categories
+     *
+     * @param null|bool   $inclParam
+     * @return array|Pc[]
+     * @since 2.41.58 2022-08-24
+     */
+    public function getAllCategories( ? bool $inclParam = false ) : array
+    {
+        return self::getMvalProperties( $this->categories, $inclParam );
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isCategoriesSet() : bool
+    {
+        return self::isMvalSet( $this->categories );
+    }
+
+    /**
      * Set calendar component property categories
      *
-     * @param null|mixed   $value
-     * @param null|array   $params
-     * @param null|int     $index
+     * @param null|string|Pc   $value
+     * @param null|int|array $params
+     * @param null|int      $index
      * @return static
      * @throws InvalidArgumentException
-     * @since 2.29.14 2019-09-03
+     * @since 2.41.36 2022-04-09
      */
-    public function setCategories( $value = null, $params = [], $index = null ) : self
+    public function setCategories(
+        null|string|Pc $value = null,
+        null|int|array $params = [],
+        ? int $index = null
+    ) : static
     {
-        if( empty( $value )) {
-            $this->assertEmptyValue( $value, self::CATEGORIES );
-            $value  = Util::$SP0;
-            $params = [];
+        $value = self::marshallInputMval( $value, $params, $index );
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, self::CATEGORIES );
+            $value->setEmpty();
         }
-        Util::assertString( $value, self::CATEGORIES );
-        CalendarComponent::setMval(
-            $this->categories,
-            (string) $value,
-            $params,
-            null,
-            $index
-        );
+        else {
+            $value->value = Util::assertString( $value->value, self::CATEGORIES );
+        }
+        self::setMval( $this->categories, $value, $index );
         return $this;
     }
 }

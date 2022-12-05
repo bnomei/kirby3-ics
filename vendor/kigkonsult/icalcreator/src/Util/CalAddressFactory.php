@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -30,70 +30,62 @@ declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Util;
 
 use InvalidArgumentException;
-use Kigkonsult\Icalcreator\Vcalendar;
 use Kigkonsult\Icalcreator\CalendarComponent;
+use Kigkonsult\Icalcreator\IcalInterface;
+use Kigkonsult\Icalcreator\Pc;
+use Kigkonsult\Icalcreator\Vcalendar;
+use Kigkonsult\Icalcreator\Vevent;
 
-use function array_change_key_case;
-use function count;
-use function explode;
 use function in_array;
-use function is_array;
 use function method_exists;
 use function sprintf;
 use function strcasecmp;
-use function strpos;
-use function strtoupper;
+use function strstr;
 use function substr;
 use function trim;
 
 /**
  * iCalcreator attendee support class
  *
- * @since 2.39 2021-06-19
+ * @since 2.41.68 - 2022-10-21
  */
 class CalAddressFactory
 {
     /**
-     * @var array
+     * @var string[]
      */
-    private static $CALADDRESSPROPERTIES = [
-        Vcalendar::ATTENDEE,
-        Vcalendar::CONTACT,
-        Vcalendar::ORGANIZER
-    ];
-
-    /**
-     * @var array
-     */
-    private static $ParamArrayKeys = [
-        Vcalendar::MEMBER,
-        Vcalendar::DELEGATED_TO,
-        Vcalendar::DELEGATED_FROM,
+    private static array $CALADDRESSPROPERTIES = [
+        IcalInterface::ATTENDEE,
+        IcalInterface::CONTACT,
+        IcalInterface::ORGANIZER,
+        IcalInterface::PARTICIPANT
     ];
 
     /**
      * @var string Prefix for Ical cal-address etc
+     * @since 2.41.52  2022-08-06
      */
-    public  static $MAILTOCOLON = 'MAILTO:';
-    private static $AT          = '@';
+    public  static string $MAILTOCOLON = 'mailto:';
+    private static string $AT          = '@';
 
     /**
-     * Assert cal-address (i.e. MAILTO.prefixed)
+     * Assert cal-address (i.e. MAILTO-prefixed)
      *
      * @param string $calAddress
+     * @return void
      * @throws InvalidArgumentException
-     * @since  2.27.8 - 2019-03-18
+     * @since  2.41.68 - 2022-10-21
      */
-    public static function assertCalAddress( $calAddress )
+    public static function assertCalAddress( string $calAddress ) : void
     {
         static $DOT    = '.';
         static $XDOT   = 'x.';
         static $ERRMSG = 'Invalid email %s';
-        if( false == strpos( $calAddress, self::$AT )) {
+        if( ! str_contains( $calAddress, self::$AT )) {
             throw new InvalidArgumentException( sprintf( $ERRMSG, $calAddress ));
         }
         $domain = StringFactory::after( self::$AT, $calAddress );
-        if( false === strpos( StringFactory::before( self::$AT, $calAddress ), $DOT )) {
+        if( ! str_contains( strstr( $calAddress, self::$AT, true ), $DOT )) {
             $namePart    = self::extractNamepartFromEmail( $calAddress );
             $testAddress = $XDOT . $namePart . self::$AT . $domain;
         }
@@ -112,15 +104,15 @@ class CalAddressFactory
      * @param string $calAddress
      * @param bool $forceMailto   force if missing
      * @return string
-     * @since  2.27.8 - 2019-03-17
+     * @since  2.41.52 - 2022-08-06
      */
-    public static function conformCalAddress( string $calAddress, $forceMailto = false ) : string
+    public static function conformCalAddress( string $calAddress, ? bool $forceMailto = false ) : string
     {
         switch( true ) {
             case empty( $calAddress ) :
                 break;
-            case ( 0 == strcasecmp( self::$MAILTOCOLON, substr( $calAddress, 0, 7 ))) :
-                // exists, force uppercase
+            case ( 0 === strcasecmp( self::$MAILTOCOLON, substr( $calAddress, 0, 7 ))) :
+                // exists, force lowercase
                 $calAddress = self::$MAILTOCOLON . substr( $calAddress, 7 );
                 break;
             case $forceMailto :
@@ -132,7 +124,7 @@ class CalAddressFactory
     }
 
     /**
-     * Return bool true if email has leading MAILTO:
+     * Return bool true if email has leading mailto:
      *
      * @param string $email
      * @return bool
@@ -140,39 +132,36 @@ class CalAddressFactory
      */
     private static function hasMailtoPrefix( string $email ) : bool
     {
-        return ( 0 == strcasecmp( self::$MAILTOCOLON, substr( $email, 0, 7 )));
+        return ( 0 === strcasecmp( self::$MAILTOCOLON, substr( $email, 0, 7 )));
     }
 
     /**
-     * Return email without prefix (anycase) 'MAILTO;
+     * Return email without prefix (anycase) 'mailto;
      *
      * @param string $email
      * @return string
-     * @since  2.27.8 - 2019-03-17
+     * @since  2.41.52 - 2022-08-06
      */
     public static function removeMailtoPrefix( string $email ) : string
     {
-        if( self::hasMailtoPrefix( $email )) {
-            return substr( $email, 7 );
-        }
-        return $email;
+        return self::hasMailtoPrefix( $email ) ? substr( $email, 7 ) : $email;
     }
 
     /**
      * Return bool true if parameter EMAIL equals ATTENDEE/ORGANIZER value
      *
-     * @param string $value
-     * @param array $params
-     * @since  2.29.11 - 2019-08-30
+     * @param Pc   $contents
+     * @return void
+     * @since  2.41.36 - 2022-03-31
      */
-    public static function sameValueAndEMAILparam( string $value, array & $params )
+    public static function sameValueAndEMAILparam( Pc $contents ) : void
     {
-        if( isset( $params[Vcalendar::EMAIL] ) &&
-            ( 0 == strcasecmp(
-                self::removeMailtoPrefix( $value ),
-                self::removeMailtoPrefix( $params[Vcalendar::EMAIL] ))
-            )) {
-            unset( $params[Vcalendar::EMAIL] );
+        if( $contents->hasParamKey( IcalInterface::EMAIL ) &&
+            ( 0 === strcasecmp(
+                self::removeMailtoPrefix( $contents->value ),
+                self::removeMailtoPrefix( $contents->getParams( IcalInterface::EMAIL ))
+            ))) {
+            $contents->removeParam( IcalInterface::EMAIL );
         } // end if
     }
 
@@ -181,14 +170,14 @@ class CalAddressFactory
      *
      * @param string $email
      * @return string
-     * @since  2.27.8 - 2019-03-20
+     * @since  2.41.68 - 2022-10-21
      */
     public static function extractNamepartFromEmail( string $email ) : string
     {
         if( self::hasMailtoPrefix( $email )) {
-            return StringFactory::before( self::$AT, substr( $email, 7 ));
+            return strstr( substr( $email, 7 ), self::$AT, true );
         }
-        return StringFactory::before( self::$AT, $email );
+        return strstr( $email, self::$AT, true );
     }
 
     /**
@@ -197,14 +186,14 @@ class CalAddressFactory
      * From ATTENDEEs and ORGANIZERs, name part from CONTACTs
      * NO parameters cal-addresses
      *
-     * @param Vcalendar $calendar    iCalcreator Vcalendar instance
-     * @param array     $properties
-     * @return array
+     * @param Vcalendar     $calendar    iCalcreator Vcalendar instance
+     * @param null|string[] $properties
+     * @return string[]
      * @since  2.39 - 2021-06-14
      */
     public static function getCalAddresses(
         Vcalendar $calendar,
-        $properties = null
+        ? array $properties = []
     ) : array
     {
         $searchProperties = [];
@@ -212,18 +201,17 @@ class CalAddressFactory
             $searchProperties = self::$CALADDRESSPROPERTIES;
         }
         else {
-            foreach(((array) $properties ) as $property ) {
-                if( in_array( $property, self::$CALADDRESSPROPERTIES )) {
+            foreach( $properties as $property ) {
+                if( in_array( $property, self::$CALADDRESSPROPERTIES, true )) {
                     $searchProperties[] = $property;
                 }
             } // end foreach
         }
         $output = [];
         foreach( $searchProperties as $propName ) {
-            $output = array_merge(
-                $output,
-                self::getCalAdressValuesFromProperty( $calendar, $propName )
-            );
+            foreach( self::getCalAdressValuesFromProperty( $calendar, $propName ) as $calAddress ) {
+                $output[] = $calAddress;
+            }
         } // end foreach
         sort( $output );
         return array_unique( $output );
@@ -236,8 +224,8 @@ class CalAddressFactory
      *
      * @param Vcalendar $calendar  iCalcreator Vcalendar instance
      * @param string    $propName
-     * @return array
-     * @since  2.27.8 - 2019-03-18
+     * @return string[]
+     * @since  2.27.68 - 2022-10-21
      */
     public static function getCalAdressValuesFromProperty(
         Vcalendar $calendar,
@@ -249,18 +237,18 @@ class CalAddressFactory
             return [];
         }
         $output = [];
-        foreach( $propValues as $propValue => $counts ) {
+        foreach((array) $propValues as $propValue => $counts ) {
             $propValue = self::removeMailtoPrefix( $propValue );
-            if( false !== strpos( $propValue, Util::$COMMA )) {
-                $propValue = StringFactory::before( Util::$COMMA, $propValue );
+            if( str_contains( $propValue, Util::$COMMA )) {
+                $propValue = strstr( $propValue, Util::$COMMA, true );
             }
             try {
                 self::assertCalAddress( $propValue );
             }
-            catch( InvalidArgumentException $e ) {
+            catch( InvalidArgumentException ) {
                 continue;
             }
-            if( ! in_array( $propValue, $output )) {
+            if( ! in_array( $propValue, $output, true )) {
                 $output[] = $propValue;
             }
         } // end foreach
@@ -269,49 +257,52 @@ class CalAddressFactory
     }
 
     /**
-     * Return value and parameters cal-addresses from Vcalendar property
+     * Return value and parameters cal-addresses from Vcalendar properties
      *
      * From one of ATTENDEEs and ORGANIZERs, name part from CONTACTs
      *
      * @param Vcalendar    $calendar  iCalcreator Vcalendar instance
-     * @param null|string  $propName
-     * @return array
+     * @param null|string|string[]  $propName
+     * @return string[]
      * @since  2.39 - 2021-06-19
      */
     public static function getCalAdressesAllFromProperty(
         Vcalendar $calendar,
-        $propName = null
+        null | string | array $propName = null
     ) : array
     {
         if( empty( $propName )) {
             $propName = self::$CALADDRESSPROPERTIES;
         }
-        $calendar->reset();
+        $calendar->resetCompCounter();
         $output = [];
         while( $comp = $calendar->getComponent()) {
             foreach((array) $propName as $pName ) {
                 $method = StringFactory::getGetMethodName( $pName );
-                if( ! method_exists( $comp, $method ) ) {
+                if( ! method_exists( $comp, $method )) {
                     continue;
                 }
                 switch( $pName ) {
-                    case Vcalendar::ATTENDEE :
-                        $output = array_merge(
-                            $output,
-                            self:: getCalAdressesAllFromAttendee( $comp )
-                        );
+                    case IcalInterface::ATTENDEE :
+                        foreach( self::getCalAdressesAllFromAttendee( $comp ) as $email ) {
+                            if( ! in_array( $email, $output, true )) {
+                                $output[] = $email;
+                            }
+                        }
                         break;
-                    case Vcalendar::ORGANIZER :
-                        $output = array_merge(
-                            $output,
-                            self::getCalAdressesAllFromOrganizer( $comp )
-                        );
+                    case IcalInterface::ORGANIZER :
+                        foreach( self::getCalAdressesAllFromOrganizer( $comp ) as $email ) {
+                            if( ! in_array( $email, $output, true )) {
+                                $output[] = $email;
+                            }
+                        }
                         break;
-                    case Vcalendar::CONTACT :
-                        $output = array_merge(
-                            $output,
-                            self::getCalAdressesAllFromContact( $comp )
-                        );
+                    default :
+                        foreach( self::getCalAdressesAllFromContact( $comp ) as $email ) {
+                            if( ! in_array( $email, $output, true )) {
+                                $output[] = $email;
+                            }
+                        }
                         break;
                 } // end switch
             } // end foreach
@@ -323,55 +314,55 @@ class CalAddressFactory
     /**
      * Return value and parameters cal-addresses from Vcalendar ATTENDEE property
      *
-     * @param CalendarComponent $component  iCalcreator Vcalendar component instance
-     * @return array
-     * @since  2.29 - 2021-06-19
+     * @param CalendarComponent|Vevent $component  iCalcreator Vcalendar component instance
+     * @return string[]
+     * @since  2.41.36 - 2022-04-03
      */
     public static function getCalAdressesAllFromAttendee( CalendarComponent $component ) : array
     {
         $output = [];
-        while(( false !== ( $propValue = $component->getAttendee( null, true ))) &&
-            ! empty( $propValue )) {
-            $value = self::removeMailtoPrefix( $propValue[Util::$LCvalue] );
-            if( ! in_array( $value, $output )) {
+        foreach( $component->getAllAttendee( true ) as $propValue ) {
+            if( empty( $propValue )) {
+               continue;
+            }
+            $value = self::removeMailtoPrefix( $propValue->value );
+            if( !in_array( $value, $output, true )) {
                 $output[] = $value;
             }
-            foreach( $propValue[Util::$LCparams] as $pLabel => $pValue ) {
+            foreach( $propValue->params as $pLabel => $pValue ) {
                 switch( $pLabel ) {
-                    case Vcalendar::MEMBER:       // fall through
-                    case Vcalendar::DELEGATED_TO: // fall through
-                    case Vcalendar::DELEGATED_FROM:
+                    case IcalInterface::MEMBER:       // fall through
+                    case IcalInterface::DELEGATED_TO: // fall through
+                    case IcalInterface::DELEGATED_FROM:
                         $params2[$pLabel] = [];
                         foreach( $pValue as $pValue2 ) {
-                            $pValue2 = self::removeMailtoPrefix(
-                                trim( $pValue2, StringFactory::$QQ )
-                            );
-                            if( ! in_array( $pValue2, $output )) {
+                            $pValue2 = self::removeMailtoPrefix( trim( $pValue2, StringFactory::$QQ ));
+                            if( !in_array( $pValue2, $output, true )) {
                                 $output[] = $pValue2;
                             }
                         } // end foreach
                         break;
-                    case Vcalendar::EMAIL :       // fall through
-                    case Vcalendar::SENT_BY :
+                    case IcalInterface::EMAIL :       // fall through
+                    case IcalInterface::SENT_BY :
                         $pValue2 = self::removeMailtoPrefix(
                             trim( $pValue, StringFactory::$QQ )
                         );
-                        if( ! in_array( $pValue2, $output )) {
+                        if( ! in_array( $pValue2, $output, true )) {
                             $output[] = $pValue2;
                         }
                         break;
                 } // end switch
             } // end foreach
-        } // end while
+        } // end foreach
         return $output;
     }
 
     /**
      * Return value and parameters cal-addresses from Vcalendar ORGANIZER property
      *
-     * @param CalendarComponent $component  iCalcreator Vcalendar component instance
-     * @return array
-     * @since  2.29 - 2021-06-19
+     * @param CalendarComponent|Vevent $component  iCalcreator Vcalendar component instance
+     * @return string[]
+     * @since  2.41.36 - 2022-04-03
      */
     public static function getCalAdressesAllFromOrganizer( CalendarComponent $component ) : array
     {
@@ -380,16 +371,14 @@ class CalAddressFactory
             return [];
         }
         $output = [];
-        $value = self::removeMailtoPrefix( $propValue[Util::$LCvalue] );
-        if( ! in_array( $value, $output )) {
+        $value  = self::removeMailtoPrefix( $propValue->value );
+        if( ! in_array( $value, $output, true )) {
             $output[] = $value;
         }
-        foreach( [ Vcalendar::EMAIL, Vcalendar::SENT_BY ] as $key ) {
-            if( isset( $propValue[Util::$LCparams][$key] ) ) {
-                $value = self::removeMailtoPrefix(
-                    $propValue[Util::$LCparams][$key]
-                );
-                if( ! in_array( $value, $output ) ) {
+        foreach( [ IcalInterface::EMAIL, IcalInterface::SENT_BY ] as $key ) {
+            if( $propValue->hasParamkey( $key )) {
+                $value = self::removeMailtoPrefix( $propValue->getParams( $key ));
+                if( ! in_array( $value, $output, true )) {
                     $output[] = $value;
                 }
             }
@@ -400,26 +389,28 @@ class CalAddressFactory
     /**
      * Return value and parameters cal-addresses from Vcalendar CONTACT property
      *
-     * @param CalendarComponent $component  iCalcreator Vcalendar component instance
-     * @return array
+     * @param CalendarComponent|Vevent $component  iCalcreator Vcalendar component instance
+     * @return string[]
      * @since  2.29 - 2021-06-19
      */
     public static function getCalAdressesAllFromContact( CalendarComponent $component ) : array
     {
         $output = [];
-        while(( false !== ( $propValue = $component->getContact( null, true ))) &&
-            ! empty( $propValue )) {
+        foreach( $component->getAllContact( true ) as $propValue ) {
+            if( empty( $propValue )) {
+                continue;
+            }
             $value =
-                ( false !== strpos( $propValue[Util::$LCvalue], Util::$COMMA ))
-                    ? StringFactory::before( Util::$COMMA, $propValue[Util::$LCvalue] )
-                    : $propValue[Util::$LCvalue];
+                str_contains( $propValue->value, Util::$COMMA )
+                    ? strstr( $propValue->value, Util::$COMMA, true )
+                    : $propValue->value;
             try {
                 self::assertCalAddress( $value );
             }
-            catch( InvalidArgumentException $e ) {
+            catch( InvalidArgumentException ) {
                 continue;
             }
-            if( ! in_array( $value, $output )) {
+            if( ! in_array( $value, $output, true )) {
                 $output[] = $value;
             }
         } // end while
@@ -427,103 +418,59 @@ class CalAddressFactory
     }
 
     /**
-     * Return quoted item
-     *
-     * @param string $item
-     * @return string
-     * @since  2.27.11 - 2019-01-03
-     */
-    private static function getQuotedItem( string $item ) : string
-    {
-        static $FMTQVALUE = '"%s"';
-        return sprintf( $FMTQVALUE, $item );
-    }
-
-    /**
-     * Return string of comma-separated quoted array members
-     *
-     * @param array $list
-     * @return string
-     * @since  2.27.11 - 2019-01-03
-     */
-    private static function getQuotedListItems( array $list ) : string
-    {
-        foreach( $list as & $v ) {
-            $v = self::getQuotedItem( $v );
-        }
-        return implode( Util::$COMMA, $list );
-    }
-
-    /**
      * Return formatted output for calendar component property attendee
      *
-     * @param array  $params
+     * @param string[]  $params
      * @param string $compType
      * @param bool|string $lang  bool false if not config lang found
-     * @return array
+     * @return string[]
      * @throws InvalidArgumentException
-     * @since  2.39 - 2021-06-17
+     * @since  2022-09-05 - 2.41.63
      */
     public static function inputPrepAttendeeParams(
         array $params,
         string $compType,
-        $lang
+        bool | string $lang
     ) : array
     {
-        static $XX  = 'X-';
-        static $NoParamComps = [ Vcalendar::VFREEBUSY, Vcalendar::VALARM ];
-        $params2    = [];
-        if( is_array( $params )) {
-            $params = array_change_key_case( $params, CASE_UPPER );
-            foreach( $params as $pLabel => $pValue ) {
-                if( ! StringFactory::isXprefixed( $pLabel ) &&
-                    Util::isCompInList( $compType, $NoParamComps )) { // skip
-                    continue;
-                }
-                switch( $pLabel ) {
-                    case Vcalendar::MEMBER:       // fall through
-                    case Vcalendar::DELEGATED_TO: // fall through
-                    case Vcalendar::DELEGATED_FROM:
-                        $params2[$pLabel] = self::prepInputMDtDf((array) $pValue );
-                        break;
-                    case Vcalendar::EMAIL :
-                        $params2[$pLabel] = self::prepEmail( $pValue );
-                        break;
-                    case Vcalendar::SENT_BY :
-                        $params2[$pLabel] = self::prepSentBy( $pValue );
-                        break;
-                    default:
-                        $params2[$pLabel] = trim( $pValue, StringFactory::$QQ );
-                        break;
-                } // end switch( $pLabel.. .
-            } // end foreach( $params as $pLabel => $optParamValue )
-        } // end if( is_array($params ))
+        static $NoParamComps = [ IcalInterface::VFREEBUSY, IcalInterface::VALARM ];
+        $params2 = [];
+        foreach( $params as $pLabel => $pValue ) {
+            if( ! StringFactory::isXprefixed( $pLabel ) &&
+                in_array( $compType, $NoParamComps, true )) { // skip
+                continue;
+            }
+            $params2[$pLabel] = match( $pLabel ) {
+                IcalInterface::EMAIL   => self::prepEmail( $pValue ),
+                IcalInterface::MEMBER, IcalInterface::DELEGATED_TO, IcalInterface::DELEGATED_FROM
+                                       => self::prepInputMDtDf((array) $pValue ),
+                IcalInterface::ORDER   => $pValue,
+                IcalInterface::SENT_BY => self::prepSentBy( $pValue ),
+                default                => trim( $pValue, StringFactory::$QQ ),
+            }; // end match( $pLabel.. .
+        } // end foreach( $params as $pLabel => $optParamValue )
         // remove defaults
-        ParameterFactory::ifExistRemove(
-            $params2,
-            Vcalendar::CUTYPE,
-            Vcalendar::INDIVIDUAL
-        );
-        ParameterFactory::ifExistRemove(
-            $params2,
-            Vcalendar::PARTSTAT,
-            Vcalendar::NEEDS_ACTION
-        );
-        ParameterFactory::ifExistRemove(
-            $params2,
-            Vcalendar::ROLE,
-            Vcalendar::REQ_PARTICIPANT
-        );
-        ParameterFactory::ifExistRemove(
-            $params2,
-            Vcalendar::RSVP,
-            Vcalendar::FALSE
-        );
+        if( isset( $params2[IcalInterface::CUTYPE] ) &&
+            ( IcalInterface::INDIVIDUAL === $params2[IcalInterface::CUTYPE] )) {
+            unset( $params2[IcalInterface::CUTYPE] );
+        }
+        if( isset( $params2[IcalInterface::PARTSTAT] ) &&
+            ( IcalInterface::NEEDS_ACTION === $params2[IcalInterface::PARTSTAT] )) {
+            unset( $params2[IcalInterface::PARTSTAT] );
+        }
+        if( isset( $params2[IcalInterface::ROLE] ) &&
+            ( IcalInterface::REQ_PARTICIPANT === $params2[IcalInterface::ROLE] )) {
+            unset( $params2[IcalInterface::ROLE] );
+        }
+        if( isset( $params2[IcalInterface::RSVP] ) &&
+            ( IcalInterface::FALSE === $params2[IcalInterface::RSVP] )) {
+            unset( $params2[IcalInterface::RSVP] );
+        }
         // check language setting
-        if( isset( $params2[Vcalendar::CN] ) &&
-            ! isset( $params2[Vcalendar::LANGUAGE] ) &&
+        if( isset( $params2[IcalInterface::CN] ) &&
+            ! isset( $params2[IcalInterface::LANGUAGE] ) &&
             ! empty( $lang )) {
-            $params2[Vcalendar::LANGUAGE] = $lang;
+            $params2[IcalInterface::LANGUAGE] = $lang;
         }
         return $params2;
     }
@@ -531,8 +478,8 @@ class CalAddressFactory
     /**
      * Prepare input Member, DELEGATED_TO, DELEGATED_FROM parameters
      *
-     * @param array $calAddress
-     * @return array
+     * @param string[] $calAddress
+     * @return string[]
      * @throws InvalidArgumentException
      * @since  2.39 - 2021-06-17
      */
@@ -561,7 +508,7 @@ class CalAddressFactory
      */
     public static function prepEmail( string $calAddress ) : string
     {
-        if( 0 == strcasecmp( self::$MAILTOCOLON, substr( $calAddress, 0, 7 ))) {
+        if( 0 === strcasecmp( self::$MAILTOCOLON, substr( $calAddress, 0, 7 ))) {
             $calAddress = substr( $calAddress, 7 );
         }
         self::assertCalAddress( $calAddress );
@@ -584,146 +531,5 @@ class CalAddressFactory
         );
         self::assertCalAddress( $calAddress );
         return $calAddress;
-    }
-
-    /**
-     * Return formatted output for calendar component property attendee
-     *
-     * @param array $attendeeData
-     * @param bool  $allowEmpty
-     * @return string
-     * @since  2.29.11 - 2019-08-30
-     */
-    public static function outputFormatAttendee(
-        array $attendeeData,
-        bool $allowEmpty
-    ) : string
-    {
-        static $AllKeys = [
-            Vcalendar::CUTYPE,
-            Vcalendar::MEMBER,
-            Vcalendar::ROLE,
-            Vcalendar::PARTSTAT,
-            Vcalendar::RSVP,
-            Vcalendar::DELEGATED_TO,
-            Vcalendar::DELEGATED_FROM,
-            Vcalendar::SENT_BY,
-            Vcalendar::EMAIL,
-            Vcalendar::DIR,
-            Vcalendar::CN,
-            Vcalendar::LANGUAGE
-        ];
-        static $KEYGRP1 = [ Vcalendar::ROLE, Vcalendar::PARTSTAT, Vcalendar::RSVP ];
-        static $KEYGRP2 = [ Vcalendar::DELEGATED_TO, Vcalendar::DELEGATED_FROM ];
-        static $KEYGRP3 = [ Vcalendar::SENT_BY, Vcalendar::EMAIL ];
-        static $KEYGRP4 = [ Vcalendar::CN, Vcalendar::LANGUAGE ];
-        static $FMTKEYVALUE = ';%s=%s';
-        static $FMTDIREQ    = ';%s=%s%s%s';
-        $output = Util::$SP0;
-        foreach( $attendeeData as $ax => $attendeePart ) {
-            if( empty( $attendeePart[Util::$LCvalue] )) {
-                if( $allowEmpty ) {
-                    $output .= StringFactory::createElement( Vcalendar::ATTENDEE );
-                }
-                continue;
-            }
-            $attributes = $content = null;
-            foreach( $attendeePart as $pLabel => $pValue ) {
-                if( Util::$LCvalue == $pLabel ) {
-                    $content .= $pValue;
-                    continue;
-                }
-                if(( Util::$LCparams != $pLabel ) ||
-                    ( ! is_array( $pValue ))) {
-                    continue;
-                }
-                foreach( $pValue as $pLabel2 => $pValue2 ) { // fix (opt) quotes
-                    if( is_array( $pValue2 ) ||
-                        in_array( $pLabel2, self::$ParamArrayKeys )) {
-                        continue;
-                    } // all but DELEGATED-FROM, DELEGATED-TO, MEMBER
-                    if(( false !== strpos( $pValue2, Util::$COLON )) ||
-                       ( false !== strpos( $pValue2, Util::$SEMIC )) ||
-                       ( false !== strpos( $pValue2, Util::$COMMA ))) {
-                        $pValue[$pLabel2] = self::getQuotedItem( $pValue2 );
-                    }
-                } // end foreach
-                /* set attendee parameters in (almost) rfc2445 order */
-                if( isset( $pValue[Vcalendar::CUTYPE] )) {
-                    $attributes .= sprintf( $FMTKEYVALUE, Vcalendar::CUTYPE, $pValue[Vcalendar::CUTYPE] );
-                }
-                if( isset( $pValue[Vcalendar::MEMBER] )) {
-                    $attributes .= sprintf(
-                        $FMTKEYVALUE,
-                        Vcalendar::MEMBER,
-                        self::getQuotedListItems( $pValue[Vcalendar::MEMBER] )
-                    );
-                }
-                foreach( $KEYGRP1 as $key ) { // ROLE, PARTSTAT, RSVP
-                    if( isset( $pValue[$key] ) ) {
-                        $attributes .= sprintf( $FMTKEYVALUE, $key, $pValue[$key] );
-                    }
-                } // end foreach
-                foreach( $KEYGRP2 as $key ) { // DELEGATED_TO, DELEGATED_FROM
-                    if( isset( $pValue[$key] ) ) {
-                        $attributes .= sprintf(
-                            $FMTKEYVALUE,
-                            $key,
-                            self::getQuotedListItems( $pValue[$key] )
-                        );
-                    }
-                } // end foreach
-                foreach( $KEYGRP3 as $key ) { // SENT_BY, EMAIL
-                    if( isset( $pValue[$key] ) ) {
-                        $attributes .= sprintf( $FMTKEYVALUE, $key, self::getQuotedListItems( [ $pValue[$key] ] ));
-                    }
-                } // end foreach
-                if( isset( $pValue[Vcalendar::DIR] )) {
-                    $delim       = ( false === strpos( $pValue[Vcalendar::DIR], StringFactory::$QQ )) ? StringFactory::$QQ : null;
-                    $attributes .= sprintf( $FMTDIREQ, Vcalendar::DIR, $delim, $pValue[Vcalendar::DIR], $delim );
-                }
-                foreach( $KEYGRP4 as $key ) { // CN, LANGUAGE
-                    if( isset( $pValue[$key] )) {
-                        $attributes .= sprintf( $FMTKEYVALUE, $key, $pValue[$key] );
-                    }
-                } // end foreach
-                $xParams = [];
-                foreach( $pValue as $pLabel2 => $pValue2 ) {
-                    if( ! in_array( $pLabel2, $AllKeys )) {
-                        $xParams[$pLabel2] = $pValue2;
-                    }
-                }
-                if( ! empty( $xParams )) {
-                    ksort( $xParams, SORT_STRING );
-                    foreach( $xParams as $pLabel2 => $pValue2 ) {
-                        $attributes .= sprintf( $FMTKEYVALUE, $pLabel2, $pValue2 );
-                    }
-                }
-            } // end foreach( $attendeePart )) as $pLabel => $pValue )
-            $output .= StringFactory::createElement( Vcalendar::ATTENDEE, $attributes, $content );
-        } // end foreach( $attendeeData as $ax => $attendeePart )
-        return $output;
-    }
-
-    /**
-     * Return value and parameters from parsed row and propAttr
-     *
-     * @param string $row
-     * @param array $propAttr
-     * @return array
-     * @since  2.27.11 - 2019-01-04
-     */
-    public static function parseAttendee( string $row, array $propAttr ) : array
-    {
-        foreach( $propAttr as $pix => $attr ) {
-            if( ! in_array( strtoupper( $pix ), self::$ParamArrayKeys )) {
-                continue;
-            }  // 'MEMBER', 'DELEGATED-TO', 'DELEGATED-FROM'
-            $attr2 = explode( Util::$COMMA, $attr );
-            if( 1 < count( $attr2 )) {
-                $propAttr[$pix] = $attr2;
-            }
-        }
-        return [ $row, $propAttr ];
     }
 }

@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *           The above copyright, link, package and version notices,
@@ -30,25 +30,24 @@ declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
 use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Property\Property;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\DateTimeZoneFactory;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
-use Kigkonsult\Icalcreator\Util\StringFactory;
-use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Vcalendar;
 
 use function sprintf;
 
 /**
  * TZOFFSETFROM property functions
  *
- * @since 2.27.3 2018-12-22
+ * @since 2.41.60 2022-08-24
  */
 trait TZOFFSETFROMtrait
 {
     /**
-     * @var array component property TZOFFSETFROM value
+     * @var null|Pc component property TZOFFSETFROM value
      */
-    protected $tzoffsetfrom = null;
+    protected ? Pc $tzoffsetfrom = null;
 
     /**
      * Return formatted output for calendar component property tzoffsetfrom
@@ -57,18 +56,10 @@ trait TZOFFSETFROMtrait
      */
     public function createTzoffsetfrom() : string
     {
-        if( empty( $this->tzoffsetfrom )) {
-            return Util::$SP0;
-        }
-        if( empty( $this->tzoffsetfrom[Util::$LCvalue] )) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::TZOFFSETFROM )
-                : Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return Property::format(
             self::TZOFFSETFROM,
-            ParameterFactory::createParams( $this->tzoffsetfrom[Util::$LCparams] ),
-            $this->tzoffsetfrom[Util::$LCvalue]
+            $this->tzoffsetfrom,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -88,43 +79,67 @@ trait TZOFFSETFROMtrait
      * Get calendar component property tzoffsetfrom
      *
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-13
+     * @return bool|string|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getTzoffsetfrom( $inclParam = false )
+    public function getTzoffsetfrom( ? bool $inclParam = false ) : bool | string | Pc
     {
         if( empty( $this->tzoffsetfrom )) {
             return false;
         }
-        return ( $inclParam )
-            ? $this->tzoffsetfrom
-            : $this->tzoffsetfrom[Util::$LCvalue];
+        return $inclParam ? clone $this->tzoffsetfrom : $this->tzoffsetfrom->value;
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.36 2022-04-03
+     */
+    public function isTzoffsetfromSet() : bool
+    {
+        return ! empty( $this->tzoffsetfrom->value );
     }
 
     /**
      * Set calendar component property tzoffsetfrom
      *
-     * @param null|string $value
-     * @param null|array  $params
+     * @param null|string|Pc   $value
+     * @param null|array $params
      * @return static
      * @throws InvalidArgumentException
-     * @since 2.27.3 2019-03-14
+     * @since 2.41.60 2022-08-24
      */
-    public function setTzoffsetfrom( $value = null, $params = [] ) : self
+    public function setTzoffsetfrom( null|string|Pc $value = null, ? array $params = [] ) : static
+    {
+        $this->tzoffsetfrom = $this->conformTzOffset( self::TZOFFSETFROM, $value, $params );
+        return $this;
+    }
+
+    /**
+     * @param string $propName
+     * @param string|Pc|null $value
+     * @param array|null $params
+     * @return Pc
+     * @since 2.41.60 2022-08-24
+     */
+    private function conformTzOffset(
+        string $propName,
+        null|string|Pc $value = null,
+        ? array $params = []
+    ) : Pc
     {
         static $ERR = 'Invalid %s offset value %s';
-        if( empty( $value )) {
-            $this->assertEmptyValue( $value, self::TZOFFSETFROM );
-            $value  = Util::$SP0;
-            $params = [];
+        $value = ( $value instanceof Pc )
+            ? clone $value
+            : Pc::factory( $value, ParameterFactory::setParams( $params ));
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, $propName );
+            $value->setEmpty();
         }
-        elseif( ! DateTimeZoneFactory::hasOffset( $value )) {
-            throw new InvalidArgumentException( sprintf( $ERR, Vcalendar::TZOFFSETFROM, $value ));
+        elseif( ! DateTimeZoneFactory::hasOffset( $value->value )) {
+            throw new InvalidArgumentException( sprintf( $ERR,$propName, $value->value ));
         }
-        $this->tzoffsetfrom = [
-            Util::$LCvalue  => $value,
-            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
-        ];
-        return $this;
+        return $value->setParams( ParameterFactory::setParams( $params ));
     }
 }

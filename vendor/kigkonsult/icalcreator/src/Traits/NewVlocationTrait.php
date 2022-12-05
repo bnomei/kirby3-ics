@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -27,25 +27,26 @@
  *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
  */
 declare( strict_types = 1 );
-namespace Kigkonsult\Icalcreator;
+namespace Kigkonsult\Icalcreator\Traits;
 
-/**
- * iCalcreator VEVENT/VTODO component base class
- *
- * @since  2.29.24 - 2019-07-02
- */
-abstract class VetComponent extends Vcomponent
+use Exception;
+use Kigkonsult\Icalcreator\Vlocation;
+
+trait NewVlocationTrait
 {
     /**
-     * Return Valarm object instance
+     * Return Vlocation object instance
      *
-     * @return Valarm
-     * @since  2.27.2 - 2018-12-21
+     * @param null|string $locationType property LOCATION-TYPE value
+     * @param null|string $name property NAME value
+     * @return Vlocation
+     * @throws Exception
+     * @since  2.41.53 - 2022-08-08
      */
-    public function newValarm() : Valarm
+    public function newVlocation( ? string $locationType = null, ? string $name = null ) : Vlocation
     {
         $ix = $this->getNextComponentIndex();
-        $this->components[$ix] = new Valarm( $this->getConfig());
+        $this->components[$ix] = Vlocation::factory( $this->getConfig(), $locationType, $name );
         return $this->components[$ix];
     }
 }

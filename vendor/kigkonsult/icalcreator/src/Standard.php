@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,15 +29,30 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator;
 
+use Exception;
+use Kigkonsult\Icalcreator\Formatter\DScomponent as Formatter;
+
 /**
  * iCalcreator (Vtimezone) Standard component class
  *
- * @since  2.27.6 - 2018-12-28
+ * @since  2.29.55 - 2022-08-13
  */
 final class Standard extends DScomponent
 {
     /**
      * @var string
      */
-    protected static $compSgn = 's';
+    protected static string $compSgn = 's';
+
+    /**
+     * Return formatted output for calendar component VTIMEZONE Standard object instances
+     *
+     * @return string
+     * @throws Exception  (on Rdate err)
+     * @since 2.41.55 2022-08-13
+     */
+    public function createComponent() : string
+    {
+        return Formatter::format( $this );
+    }
 }

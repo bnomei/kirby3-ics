@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,43 +29,35 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\Util\StringFactory;
+use Kigkonsult\Icalcreator\Formatter\Property\Property;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\Util;
 use Kigkonsult\Icalcreator\Util\HttpFactory;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
-use InvalidArgumentException;
 
 /**
  * TZURL property functions
  *
- * @since  2.30.2 - 2021-02-04
+ * @since 2.41.55 2022-08-13
  */
 trait TZURLtrait
 {
     /**
-     * @var array component property TZURL value
+     * @var null|Pc component property TZURL value
      */
-    protected $tzurl = null;
+    protected ? Pc $tzurl = null;
 
     /**
      * Return formatted output for calendar component property tzurl
      *
      * @return string
      */
-    public function createTzurl()
+    public function createTzurl() : string
     {
-        if( empty( $this->tzurl )) {
-            return null;
-        }
-        if( empty( $this->tzurl[Util::$LCvalue] )) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::TZURL )
-                : null;
-        }
-        return StringFactory::createElement(
+        return Property::format(
             self::TZURL,
-            ParameterFactory::createParams( $this->tzurl[Util::$LCparams] ),
-            $this->tzurl[Util::$LCvalue]
+            $this->tzurl,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -84,16 +76,27 @@ trait TZURLtrait
     /**
      * Get calendar component property tzurl
      *
-     * @param bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-13
+     * @param null|bool   $inclParam
+     * @return bool|string|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getTzurl( $inclParam = false )
+    public function getTzurl( ? bool $inclParam = false ) : bool | string | Pc
     {
         if( empty( $this->tzurl )) {
             return false;
         }
-        return ( $inclParam ) ? $this->tzurl : $this->tzurl[Util::$LCvalue];
+        return $inclParam ? clone $this->tzurl : $this->tzurl->value;
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.36 2022-04-03
+     */
+    public function isTzurlSet() : bool
+    {
+        return ! empty( $this->tzurl->value );
     }
 
     /**
@@ -103,23 +106,24 @@ trait TZURLtrait
      * This URI form can be useful within an organization, but is problematic
      * in the Internet.
      *
-     * @param string $value
-     * @param array  $params
+     * @param null|string|Pc   $value
+     * @param null|array $params
      * @return static
-     * @throws InvalidArgumentException
-     * @since  2.30.2 - 2021-02-04
+     * @since 2.41.36 2022-04-03
      */
-    public function setTzurl( $value = null, $params = [] ) : self
+    public function setTzurl( null|string|Pc $value = null, ? array $params = [] ) : static
     {
-        if( empty( $value )) {
-            $this->assertEmptyValue( $value, self::TZURL );
-            $this->tzurl = [
-                Util::$LCvalue  => Util::$SP0,
-                Util::$LCparams => [],
-            ];
-            return $this;
+        $value = ( $value instanceof Pc )
+            ? clone $value
+            : Pc::factory( $value, ParameterFactory::setParams( $params ));
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, self::TZURL );
+            $this->tzurl = $value->setEmpty();
         }
-        HttpFactory::urlSet( $this->tzurl, $value, $params );
+        else {
+            Util::assertString( $value->value, self::TZURL );
+            HttpFactory::urlSet( $this->tzurl, $value );
+        }
         return $this;
     }
 }

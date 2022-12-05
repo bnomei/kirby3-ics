@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,8 +29,7 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\Util\StringFactory;
-use Kigkonsult\Icalcreator\Util\Util;
+use Kigkonsult\Icalcreator\Formatter\Property\CalMetProVer;
 
 use function gethostbyname;
 use function sprintf;
@@ -39,39 +38,34 @@ use function strtoupper;
 /**
  * PRODID property functions
  *
- * @since  2.39.1 - 2021-06-26
+ * @since 2.41.55 - 2022-08-13
  */
 trait PRODIDtrait
 {
     /**
      * @var string calendar property PRODID
      */
-    protected $prodid = null;
+    protected string $prodid;
 
     /**
      * Return formatted output for calendar property prodid
      *
      * @return string
+     * @since 2.41.55 - 2022-08-13
      */
     public function createProdid() : string
     {
-        if( empty( $this->prodid )) {
-            $this->makeProdid();
-        }
-        return StringFactory::createElement( self::PRODID, null, $this->prodid );
+        return CalMetProVer::format( self::PRODID, $this->prodid );
     }
 
     /**
      * Return prodid
      *
      * @return string
-     * @since  2.27.1 - 2018-12-16
+     * @since  2.41.55 - 2022-08-11
      */
     public function getProdid() : string
     {
-        if( empty( $this->prodid )) {
-            $this->makeProdid();
-        }
         return $this->prodid;
     }
 
@@ -86,9 +80,10 @@ trait PRODIDtrait
      *  is a globally unique identifier; using some technique such as an FPI
      *  value, as defined in [ISO 9070]."
      *
-     * @since  2.39.1 - 2021-06-26
+     * @return string
+     * @since  2.41.55 - 2022-08-11
      */
-    public function makeProdid()
+    public function makeProdid() : string
     {
         static $SERVER_NAME = 'SERVER_NAME';
         static $LOCALHOST   = 'localhost';
@@ -103,8 +98,8 @@ trait PRODIDtrait
             $lang = strtoupper( $lang );
         }
         else {
-            $lang = Util::$SP0;
+            $lang = self::$SP0;
         }
-        $this->prodid = sprintf( $FMT, $unique_id, ICALCREATOR_VERSION, $lang );
+        return sprintf( $FMT, $unique_id, ICALCREATOR_VERSION, $lang );
     }
 }

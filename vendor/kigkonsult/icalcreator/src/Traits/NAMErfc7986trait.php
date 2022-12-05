@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,55 +29,40 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\CalendarComponent;
-use Kigkonsult\Icalcreator\Util\StringFactory;
-use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Util\ParameterFactory;
 use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Property\MultiProps;
+use Kigkonsult\Icalcreator\Pc;
+use Kigkonsult\Icalcreator\Util\Util;
+use Kigkonsult\Icalcreator\Vcalendar;
 
 /**
  * NAME property functions
  *
- * @since 2.29.14 2019-09-03
+ * NAME may occur multiply times in Vcalendar but once in Vlocation/Vresource
+ *
+ * @since 2.41.55 2022-08-13
  */
 trait NAMErfc7986trait
 {
     /**
-     * @var array component property NAME value
+     * @var null|Pc[] component property NAME value
      */
-    protected $name = null;
+    protected ? array $name = null;
 
     /**
      * Return formatted output for calendar component property name
      *
      * @return string
-     * @since 2.29.5 2019-06-16
+     * @since 2.41.36 2022-04-03
      */
     public function createName() : string
     {
-        if( empty( $this->name )) {
-            return Util::$SP0;
-        }
-        $output = Util::$SP0;
-        $lang   = $this->getConfig( self::LANGUAGE );
-        foreach( $this->name as $cx => $namePart ) {
-            if( empty( $namePart[Util::$LCvalue] )) {
-                if( $this->getConfig( self::ALLOWEMPTY )) {
-                    $output .= StringFactory::createElement( self::NAME );
-                }
-                continue;
-            }
-            $output .= StringFactory::createElement(
-                self::NAME,
-                ParameterFactory::createParams(
-                    $namePart[Util::$LCparams],
-                    self::$ALTRPLANGARR,
-                    $lang
-                ),
-                StringFactory::strrep( $namePart[Util::$LCvalue] )
-            );
-        }
-        return $output;
+        return MultiProps::format(
+            self::NAME,
+            $this->name ?? [],
+            $this->getConfig( self::ALLOWEMPTY ),
+            $this->getConfig( self::LANGUAGE )
+        );
     }
 
     /**
@@ -85,15 +70,18 @@ trait NAMErfc7986trait
      *
      * @param null|int   $propDelIx   specific property in case of multiply occurrence
      * @return bool
-     * @since 2.29.5 2019-06-16
+     * @since 2.41.36 2022-04-11
      */
-    public function deleteName( $propDelIx = null ) : bool
+    public function deleteName( ? int $propDelIx = null ) : bool
     {
         if( empty( $this->name )) {
             unset( $this->propDelIx[self::NAME] );
             return false;
         }
-        return CalendarComponent::deletePropertyM(
+        if( self::isNameSingleProp( $this->getCompType())) {
+            $propDelIx = null;
+        }
+        return self::deletePropertyM(
             $this->name,
             self::NAME,
             $this,
@@ -104,47 +92,96 @@ trait NAMErfc7986trait
     /**
      * Get calendar component property name
      *
-     * @param null|int    $propIx specific property in case of multiply occurrence
+     * @param null|bool|int    $propIx specific property in case of multiply occurrence
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since 2.29.5 2019-06-16
+     * @return bool|string|Pc
+     * @since 2.41.36 2022-04-11
      */
-    public function getName( $propIx = null, $inclParam = false )
+    public function getName( null|bool|int $propIx = null, ? bool $inclParam = false ) : bool | string | Pc
     {
         if( empty( $this->name )) {
             unset( $this->propIx[self::NAME] );
             return false;
         }
-        return CalendarComponent::getPropertyM(
+        $isSingleType = self::isNameSingleProp( $this->getCompType());
+        if( $isSingleType ) {
+            if( is_bool( $propIx )) {
+                $inclParam = $propIx;
+            }
+            $propIx = null;
+        }
+        $result = self::getMvalProperty(
             $this->name,
             self::NAME,
             $this,
             $propIx,
             $inclParam
         );
+        if( $isSingleType ) {
+            unset( $this->propIx[self::NAME] );
+        }
+        return $result;
+    }
+
+    /**
+     * Return array, all calendar component property name
+     *
+     * @param null|bool   $inclParam
+     * @return array|Pc[]
+     * @since 2.41.58 2022-08-24
+     */
+    public function getAllName( ? bool $inclParam = false ) : array
+    {
+        return self::getMvalProperties( $this->name, $inclParam );
+    }
+
+    /**
+     * Return bool true if NAME property may only occur once in component
+     *
+     * @param string $compName
+     * @return bool
+     * @since 2.41.36 2022-04-11
+     */
+    public static function isNameSingleProp( string $compName ) : bool
+    {
+        return ( Vcalendar::VCALENDAR !== $compName );
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isNameSet() : bool
+    {
+        return self::isMvalSet( $this->name );
     }
 
     /**
      * Set calendar component property name
      *
-     * @param null|string  $value
-     * @param null|array   $params
-     * @param null|integer $index
+     * @param null|string|Pc   $value
+     * @param null|int|array $params
+     * @param null|int         $index
      * @return static
      * @throws InvalidArgumentException
-     * @since 2.29.14 2019-09-03
+     * @since 2.41.36 2022-04-11
      */
-    public function setName( $value = null, $params = [], $index = null ) : self
+    public function setName( null|string|Pc $value = null, null|int|array $params = [], ? int $index = null ) : static
     {
-        if( empty( $value )) {
-            $this->assertEmptyValue( $value, self::NAME );
-            $value  = Util::$SP0;
-            $params = [];
+        $value = self::marshallInputMval( $value, $params, $index );
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, self::NAME );
+            $value->setEmpty();
         }
         else {
-            Util::assertString( $value, self::NAME );
+            Util::assertString( $value->value, self::NAME );
         }
-        CalendarComponent::setMval( $this->name, $value, $params, null, $index );
+        if( self::isNameSingleProp( $this->getCompType())) {
+            $index = 1;
+        }
+        self::setMval( $this->name, $value, $index );
         return $this;
     }
 }

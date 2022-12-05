@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,54 +29,99 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator;
 
+use DateTimeInterface;
 use Exception;
+use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Vjournal as Formatter;
 
-use function sprintf;
-use function strtoupper;
 
 /**
  * iCalcreator VJOURNAL component class
  *
- * @since  2.29.9 - 2019-08-05
+ * @since  2.41.55 - 2022-08-13
  */
-final class Vjournal extends Vcomponent
+final class Vjournal extends V2component
 {
-    use Traits\ATTACHtrait,
-        Traits\ATTENDEEtrait,
-        Traits\CATEGORIEStrait,
-        Traits\CLASStrait,
-        Traits\COLORrfc7986trait,
-        Traits\COMMENTtrait,
-        Traits\CONTACTtrait,
-        Traits\CREATEDtrait,
-        Traits\DESCRIPTIONtrait,
-        Traits\DTSTAMPtrait,
-        Traits\DTSTARTtrait,
-        Traits\EXDATEtrait,
-        Traits\EXRULEtrait,
-        Traits\IMAGErfc7986trait,
-        Traits\LAST_MODIFIEDtrait,
-        Traits\ORGANIZERtrait,
-        Traits\RDATEtrait,
-        Traits\RECURRENCE_IDtrait,
-        Traits\RELATED_TOtrait,
-        Traits\REQUEST_STATUStrait,
-        Traits\RRULEtrait,
-        Traits\SEQUENCEtrait,
-        Traits\STATUStrait,
-        Traits\SUMMARYtrait,
-        Traits\UIDrfc7986trait,
-        Traits\URLtrait;
+    use Traits\ATTACHtrait;
+    use Traits\ATTENDEEtrait;
+    use Traits\Participants2AttendeesTrait;
+    use Traits\SubCompsGetTrait;
+    use Traits\CATEGORIEStrait;
+    use Traits\CLASStrait;
+    use Traits\COLORrfc7986trait;
+    use Traits\COMMENTtrait;
+    use Traits\CONTACTtrait;
+    use Traits\CREATEDtrait;
+    use Traits\DESCRIPTIONtrait;
+    use Traits\DTSTARTtrait;
+    use Traits\EXDATEtrait;
+    use Traits\EXRULEtrait;
+    use Traits\IMAGErfc7986trait;
+    use Traits\LAST_MODIFIEDtrait;
+    use Traits\ORGANIZERtrait;
+    use Traits\RDATEtrait;
+    use Traits\RECURRENCE_IDtrait;
+    use Traits\RELATED_TOtrait;
+    use Traits\REQUEST_STATUStrait;
+    use Traits\RRULEtrait;
+    use Traits\SEQUENCEtrait;
+    use Traits\STATUStrait;
+    use Traits\STRUCTURED_DATArfc9073trait;
+    use Traits\STYLED_DESCRIPTIONrfc9073trait;
+    use Traits\SUMMARYtrait;
+    use Traits\UIDrfc7986trait;
+    use Traits\URLtrait;
 
     /**
      * @var string
      */
-    protected static $compSgn = 'j';
+    protected static string $compSgn = 'j';
+
+    /**
+     * Constructor
+     *
+     * @param null|array $config
+     * @throws Exception
+     * @since  2.41.53 - 2022-08-11
+     */
+    public function __construct( ? array $config = [] )
+    {
+        parent::__construct( $config );
+        $this->setDtstamp();
+        $this->setUid();
+    }
+
+    /**
+     * Return Vjournal object instance
+     *
+     * @param null|array $config
+     * @param null|string|DateTimeInterface $dtstart
+     * @param null|string $summary
+     * @return Vjournal
+     * @throws InvalidArgumentException
+     * @throws Exception
+     * @since  2.41.53 - 2022-08-08
+     */
+    public static function factory(
+        ? array $config = [],
+        null|string|DateTimeInterface $dtstart = null,
+        ? string $summary = null
+    ) : Vjournal
+    {
+        $instance = new Vjournal( $config );
+        if( null !== $dtstart ) {
+            $instance->setDtstart( $dtstart );
+        }
+        if( null !== $summary ) {
+            $instance->setSummary( $summary );
+        }
+        return $instance;
+    }
 
     /**
      * Destructor
      *
-     * @since  2.29.9 - 2019-08-05
+     * @since 2.41.3 2022-01-17
      */
     public function __destruct()
     {
@@ -84,7 +129,6 @@ final class Vjournal extends Vcomponent
             $this->compType,
             $this->xprop,
             $this->components,
-            $this->unparsed,
             $this->config,
             $this->compix,
             $this->propIx,
@@ -118,6 +162,8 @@ final class Vjournal extends Vcomponent
             $this->rrule,
             $this->sequence,
             $this->status,
+            $this->structureddata,
+            $this->styleddescription,
             $this->summary,
             $this->uid,
             $this->url
@@ -129,39 +175,10 @@ final class Vjournal extends Vcomponent
      *
      * @return string
      * @throws Exception  (on Rdate err)
-     * @since  2.29.9 - 2019-08-05
+     * @since  2.41.55 - 2022-08-13
      */
     public function createComponent() : string
     {
-        $compType    = strtoupper( $this->getCompType());
-        $component   = sprintf( self::$FMTBEGIN, $compType );
-        $component  .= $this->createUid();
-        $component  .= $this->createDtstamp();
-        $component  .= $this->createAttach();
-        $component  .= $this->createAttendee();
-        $component  .= $this->createCategories();
-        $component  .= $this->createClass();
-        $component  .= $this->createColor();
-        $component  .= $this->createComment();
-        $component  .= $this->createContact();
-        $component  .= $this->createCreated();
-        $component  .= $this->createDescription();
-        $component  .= $this->createDtstart();
-        $component  .= $this->createExdate();
-        $component  .= $this->createExrule();
-        $component  .= $this->createImage();
-        $component  .= $this->createLastmodified();
-        $component  .= $this->createOrganizer();
-        $component  .= $this->createRdate();
-        $component  .= $this->createRequeststatus();
-        $component  .= $this->createRecurrenceid();
-        $component  .= $this->createRelatedto();
-        $component  .= $this->createRrule();
-        $component  .= $this->createSequence();
-        $component  .= $this->createStatus();
-        $component  .= $this->createSummary();
-        $component  .= $this->createUrl();
-        $component  .= $this->createXprop();
-        return $component . sprintf( self::$FMTEND, $compType );
+        return Formatter::format( $this );
     }
 }

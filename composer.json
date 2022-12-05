@@ -2,7 +2,7 @@
   "name": "bnomei/kirby3-ics",
   "description": "Generate ICS Files",
   "type": "kirby-plugin",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "license": "MIT",
   "authors": [
     {
@@ -33,10 +33,13 @@
   },
   "config": {
     "optimize-autoloader": true,
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "getkirby/composer-installer": true
+    }
   },
   "require": {
-    "php": ">=7.2.0",
+    "php": ">=8.0",
     "getkirby/composer-installer": "^1.1",
     "kigkonsult/icalcreator": "^2.27"
   },

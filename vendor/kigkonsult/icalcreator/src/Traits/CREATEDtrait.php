@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -33,25 +33,22 @@ use DateTime;
 use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Property\DtxProperty;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\DateTimeFactory;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
-use Kigkonsult\Icalcreator\Util\StringFactory;
-use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Vcalendar;
-
-use function array_change_key_case;
 
 /**
  * CREATED property functions
  *
- * @since 2.29.16 2020-01-24
+ * @since 2.41.55 - 2022-08-13
  */
 trait CREATEDtrait
 {
     /**
-     * @var array component property CREATED value
+     * @var null|Pc component property CREATED value
      */
-    protected $created = null;
+    protected ? Pc $created = null;
 
     /**
      * Return formatted output for calendar component property created
@@ -59,17 +56,14 @@ trait CREATEDtrait
      * @return string
      * @throws Exception
      * @throws InvalidArgumentException
-     * @since 2.29.1 2019-06-22
+     * @since 2.41.55 - 2022-08-13
      */
     public function createCreated() : string
     {
-        if( empty( $this->created )) {
-            return Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return  DtxProperty::format(
             self::CREATED,
-            ParameterFactory::createParams( $this->created[Util::$LCparams] ),
-            DateTimeFactory::dateTime2Str( $this->created[Util::$LCvalue] )
+            $this->created,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -89,39 +83,48 @@ trait CREATEDtrait
      * Return calendar component property created
      *
      * @param null|bool   $inclParam
-     * @return bool|DateTime|array
-     * @since  2.27.14 - 2019-01-27
+     * @return bool|string|DateTime|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getCreated( $inclParam = false )
+    public function getCreated( ? bool $inclParam = false ) : DateTime | bool | string | Pc
     {
         if( empty( $this->created )) {
             return false;
         }
-        return ( $inclParam ) ? $this->created : $this->created[Util::$LCvalue];
+        return $inclParam ? clone $this->created : $this->created->value;
     }
 
     /**
-     * Set calendar component property created
+     * Return bool true if set (and ignore empty property)
      *
-     * @param null|string|DateTimeInterface $value
-     * @param null|mixed  $params
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isCreatedSet() : bool
+    {
+        return ! empty( $this->created->value );
+    }
+
+    /**
+     * Set calendar component property created, 'now' in UTC if empty
+     *
+     * @param null|string|Pc|DateTimeInterface $value
+     * @param null|array $params
      * @return static
      * @throws Exception
      * @throws InvalidArgumentException
-     * @since 2.29.16 2020-01-24
+     * @since 2.41.36 2022-04-03
      */
-    public function setCreated( $value  = null, $params = [] ) : self
+    public function setCreated( null|string|DateTimeInterface|Pc $value = null, ? array $params = [] ) : static
     {
-        if( empty( $value )) {
-            $this->created = [
-                Util::$LCvalue  => DateTimeFactory::factory( null, self::UTC ),
-                Util::$LCparams => [],
-            ];
-            return $this;
-        }
-        $params = array_change_key_case( $params, CASE_UPPER );
-        $params[Vcalendar::VALUE] = Vcalendar::DATE_TIME;
-        $this->created = DateTimeFactory::setDate( $value, $params, true ); // $forceUTC
+        $value = ( $value instanceof Pc )
+            ? clone $value
+            : Pc::factory( $value, ParameterFactory::setParams( $params ));
+        $value->addParamValue( self::DATE_TIME ); // req
+        $this->created = empty( $value->value )
+            ? $value->setValue( self::getUtcDateTimePc()->value )
+                ->removeParam( self::VALUE )
+            : DateTimeFactory::setDate( $value, true );
         return $this;
     }
 }

@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,22 +29,23 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
+use Kigkonsult\Icalcreator\Formatter\Property\MultiProps;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\StringFactory;
-use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Util\ParameterFactory;
-use InvalidArgumentException;
 
 /**
  * LOCATION property functions
  *
- * @since 2.29.14 2019-09-03
+ * LOCATION may occur multiply times i Participant, once otherwise
+ *
+ * @since 2.41.55 2022-08-13
  */
 trait LOCATIONtrait
 {
     /**
-     * @var array component property LOCATION value
+     * @var null|Pc[] component property LOCATION value
      */
-    protected $location = null;
+    protected ? array $location = null;
 
     /**
      * Return formatted output for calendar component property location
@@ -53,75 +54,135 @@ trait LOCATIONtrait
      */
     public function createLocation() : string
     {
-        if( empty( $this->location )) {
-            return Util::$SP0;
-        }
-        if( empty( $this->location[Util::$LCvalue] )) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::LOCATION )
-                : Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return MultiProps::format(
             self::LOCATION,
-            ParameterFactory::createParams(
-                $this->location[Util::$LCparams],
-                self::$ALTRPLANGARR,
-                $this->getConfig( self::LANGUAGE )
-            ),
-            StringFactory::strrep( $this->location[Util::$LCvalue] )
+            $this->location ?? [],
+            $this->getConfig( self::ALLOWEMPTY ),
+            $this->getConfig( self::LANGUAGE )
         );
     }
 
     /**
      * Delete calendar component property location
      *
+     * @param null|int   $propDelIx   specific property in case of multiply occurrence
      * @return bool
-     * @since  2.27.1 - 2018-12-15
+     * @since 2.41.36 2022-04-11
      */
-    public function deleteLocation() : bool
+    public function deleteLocation( ? int $propDelIx = null ) : bool
     {
         $this->location = null;
-        return true;
+        if( empty( $this->location )) {
+            unset( $this->propDelIx[self::LOCATION] );
+            return false;
+        }
+        if( self::isLocationSingleProp( $this->getCompType())) {
+            $propDelIx = null;
+        }
+        return self::deletePropertyM(
+            $this->location,
+            self::LOCATION,
+            $this,
+            $propDelIx
+        );
     }
 
     /**
      * Get calendar component property location
      *
-     * @param bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @param null|bool|int   $propIx specific property in case of multiply occurrence
+     * @param null|bool  $inclParam
+     * @return bool|string|Pc
+     * @since 2.41.36 2022-04-11
      */
-    public function getLocation( $inclParam = false )
+    public function getLocation( null|bool|int $propIx = null, ? bool $inclParam = false ) : bool | string | Pc
     {
         if( empty( $this->location )) {
+            unset( $this->propIx[self::LOCATION] );
             return false;
         }
-        return ( $inclParam )
-            ? $this->location
-            : $this->location[Util::$LCvalue];
+        $isSingleProp = self::isLocationSingleProp( $this->getCompType());
+        if( $isSingleProp ) {
+            if( is_bool( $propIx )) {
+                $inclParam = $propIx;
+            }
+            $propIx = null;
+        }
+        $result = self::getMvalProperty(
+            $this->location,
+            self::LOCATION,
+            $this,
+            $propIx,
+            $inclParam
+        );
+        if( $isSingleProp ) {
+            unset( $this->propIx[self::LOCATION] );
+        }
+        return $result;
+    }
+
+    /**
+     * Return array, all calendar component property location
+     *
+     * @param null|bool   $inclParam
+     * @return array|Pc[]
+     * @since 2.41.58 2022-08-24
+     */
+    public function getAllLocation( ? bool $inclParam = false ) : array
+    {
+        return self::getMvalProperties( $this->location, $inclParam );
+    }
+
+    /**
+     * Return bool true if LOCATION property may only occur once in component
+     *
+     * @param string $compName
+     * @return bool
+     * @since 2.41.36 2022-04-11
+     */
+    public static function isLocationSingleProp( string $compName ) : bool
+    {
+        return ( self::PARTICIPANT !== $compName );
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isLocationSet() : bool
+    {
+        return self::isMvalSet( $this->location );
     }
 
     /**
      * Set calendar component property location
      *
-     * @param string $value
-     * @param array  $params
+     * @param null|string|Pc    $value
+     * @param null|int|array $params
+     * @param null|int          $index  if NOT comp PARTICIPANT : 1
      * @return static
-     * @throws InvalidArgumentException
-     * @since 2.29.14 2019-09-03
+     * @since 2.41.36 2022-04-11
      */
-    public function setLocation( $value = null, $params = [] ) : self
+    public function setLocation(
+        null|string|Pc $value = null,
+        null|int|array $params = [],
+        ? int $index = null
+    ) : static
     {
-        if( empty( $value )) {
-            $this->assertEmptyValue( $value, self::LOCATION );
-            $value = Util::$SP0;
-            $params    = [];
+        $value = self::marshallInputMval( $value, $params, $index );
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, self::LOCATION );
+            $value->setEmpty();
         }
-        Util::assertString( $value, self::LOCATION );
-        $this->location = [
-            Util::$LCvalue  => StringFactory::trimTrailNL( $value ),
-            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
-        ];
+        else {
+            $value->value = StringFactory::trimTrailNL( $value->value );
+        }
+        if( self::isLocationSingleProp( $this->getCompType())) {
+            $index = 1;
+        }
+        self::setMval( $this->location, $value, $index );
         return $this;
     }
 }

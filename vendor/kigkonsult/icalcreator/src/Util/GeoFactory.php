@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -26,7 +26,7 @@
  *            You should have received a copy of the GNU Lesser General Public License
  *            along with iCalcreator. If not, see <https://www.gnu.org/licenses/>.
  */
-
+declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Util;
 
 use function abs;
@@ -36,15 +36,15 @@ use function rtrim;
 /**
  * iCalcreator geo support class
  *
- * @since  2.27.4 - 2019-07-02
+ * @since  2.41.62 - 2022-08-28
  */
 class GeoFactory
 {
     /**
      * @var string  GEO vars: output format for geo latitude and longitude (before rtrim) etc
      */
-    public static $geoLatFmt  = '%09.6f';
-    public static $geoLongFmt = '%8.6f';
+    public static string $geoLatFmt  = '%s%09.6f';
+    public static string $geoLongFmt = '%s%8.6f';
 
     /**
      * Return formatted geo output
@@ -64,7 +64,7 @@ class GeoFactory
         return
             rtrim(
                 rtrim(
-                    $sign . sprintf( $format, abs( $ll )),
+                    sprintf( $format, $sign, abs( $ll )),
                     Util::$ZERO
                 ),
                 Util::$DOT

@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -32,21 +32,22 @@ namespace Kigkonsult\Icalcreator\Traits;
 use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Property\Exdate;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\DateTimeFactory;
 use Kigkonsult\Icalcreator\Util\RexdateFactory;
-use Kigkonsult\Icalcreator\Util\Util;
 
 /**
  * EXDATE property functions
  *
- * @since 2.29.2 2019-06-23
+ * @since 2.41.55 - 2022-08-13
  */
 trait EXDATEtrait
 {
     /**
-     * @var array component property EXDATE value
+     * @var null|Pc[] component property EXDATE value
      */
-    protected $exdate = null;
+    protected ? array $exdate = null;
 
     /**
      * Return formatted output for calendar component property exdate
@@ -57,11 +58,9 @@ trait EXDATEtrait
      */
     public function createExdate() : string
     {
-        if( empty( $this->exdate )) {
-            return Util::$SP0;
-        }
-        return RexdateFactory::formatExdate(
-            $this->exdate,
+        return Exdate::format(
+            self::EXDATE,
+            $this->exdate ?? [],
             $this->getConfig( self::ALLOWEMPTY )
         );
     }
@@ -73,13 +72,13 @@ trait EXDATEtrait
      * @return bool
      * @since  2.27.1 - 2018-12-15
      */
-    public function deleteExdate( $propDelIx = null ) : bool
+    public function deleteExdate( ? int $propDelIx = null ) : bool
     {
         if( empty( $this->exdate )) {
             unset( $this->propDelIx[self::EXDATE] );
             return false;
         }
-        return  self::deletePropertyM(
+        return self::deletePropertyM(
             $this->exdate,
             self::EXDATE,
             $this,
@@ -92,71 +91,116 @@ trait EXDATEtrait
      *
      * @param null|int    $propIx specific property in case of multiply occurrence
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @return bool|string|array|Pc
+     * @since 2.41.46 2022-04-27
      */
-    public function getExdate( $propIx = null, $inclParam = false )
+    public function getExdate( ? int $propIx = null, ? bool $inclParam = false ) : bool | string | array | Pc
     {
         if( empty( $this->exdate )) {
             unset( $this->propIx[self::EXDATE] );
             return false;
         }
-        return self::getPropertyM(
+        $output = self::getMvalProperty(
             $this->exdate,
             self::EXDATE,
             $this,
             $propIx,
             $inclParam
         );
+        return empty( $output ) ? false : $output;
+    }
+
+    /**
+     * Return array, all calendar component property exdate
+     *
+     * @param null|bool   $inclParam
+     * @return array|Pc[]
+     * @since 2.41.58 2022-08-24
+     */
+    public function getAllExdate( ? bool $inclParam = false ) : array
+    {
+        return self::getMvalProperties( $this->exdate, $inclParam );
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isExdateSet() : bool
+    {
+        return self::isMvalSet( $this->exdate );
     }
 
     /**
      * Set calendar component property exdate
      *
-     * @param null|string|string[]|DateTimeInterface|DateTimeInterface[] $value
-     * @param null|array   $params
-     * @param null|integer $index
+     * @param null|string|Pc|array|DateTimeInterface|DateTimeInterface[] $value
+     * @param null|int|array $params
+     * @param null|int          $index
      * @return static
      * @throws Exception
      * @throws InvalidArgumentException
-     * @since 2.29.16 2020-01-24
+     * @since 2.41.46 2022-04-27
      */
-    public function setExdate( $value = null, $params = [], $index = null ) : self
+    public function setExdate(
+        null|string|array|DateTimeInterface|Pc $value = null,
+        null|int|array $params = [],
+        ? int $index = null
+    ) : static
     {
-        if( empty( $value ) ||
-            ( is_array( $value) && ( 1 == count( $value )) && empty( reset( $value )))
-        ) {
-            $this->assertEmptyValue( $value, self::EXDATE );
-             self::setMval( $this->exdate, Util::$SP0, [], null, $index );
-            return $this;
+        $value        = self::marshallInputMval( $value, $params, $index );
+        $value->value = self::checkSingleExdates( $value->value );
+        if( empty( $value->value )) {
+            $this->assertEmptyValue( $value->value, self::EXDATE );
+            $value->setEmpty();
         }
-        $value = self::checkSingleExdates( $value );
-        $input = RexdateFactory::prepInputExdate( $value, $params );
-         self::setMval(
-            $this->exdate,
-            $input[Util::$LCvalue],
-            $input[Util::$LCparams],
-            null,
-            $index
-        );
+        else {
+            $value = RexdateFactory::prepInputExdate( $value );
+        }
+        self::setMval( $this->exdate, $value, $index );
         return $this;
     }
 
     /**
-     * Return $value is single input
+     * Return $value as array of single (date) inputs
      *
-     * @param string|string[]|DateTimeInterface|DateTimeInterface[] $value
-     * @return mixed
-     * @since 2.29.16 2020-01-24
+     * Accepts only (array) DateTimeInterface/string-date OR empty
+     *
+     * @param null|string|DateTimeInterface|DateTimeInterface[]|string[] $value
+     * @return array
+     * @throws InvalidArgumentException
+     * @since 2.41.57 2022-08-18
      */
-    private static function checkSingleExdates( $value ) : array
+    private static function checkSingleExdates( null|string|array|DateTimeInterface $value ) : array
     {
-        if( $value instanceof DateTimeInterface ) {
+        if( empty( $value )) {
+            return [];
+        }
+        if(( $value instanceof DateTimeInterface ) || DateTimeFactory::isStringAndDate( $value )) {
             return [ $value ];
         }
-        if( DateTimeFactory::isStringAndDate( $value )) {
-            return [ $value ];
+        if( is_array( $value )) {
+            $output = [];
+            foreach( $value as $x => $value2 ) {
+                if( empty( $value2 )) {
+                    continue;
+                }
+                if(( $value2 instanceof DateTimeInterface ) ||
+                    DateTimeFactory::isStringAndDate( $value2 )) {
+                    $output[] = $value2;
+                    continue;
+                }
+                throw new InvalidArgumentException(
+                    sprintf( RexdateFactory::$REXDATEERR, self::EXDATE, $x, var_export( $value2, true )
+                    )
+                );
+            }
+            return $output;
         }
-        return $value;
+        throw new InvalidArgumentException(
+            sprintf( RexdateFactory::$REXDATEERR,self::EXDATE, 10, var_export( $value, true ))
+        );
     }
 }

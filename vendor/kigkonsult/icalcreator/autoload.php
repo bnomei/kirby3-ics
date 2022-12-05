@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -31,12 +31,14 @@
  *
  * iCalcreator package autoloader
  *
- * @since  2.30.3 - 2021-02-16
+ * @since  2.41.71 - 2022-11-28
  */
+
 /**
  *         Do NOT alter or remove the constant!!
  */
-define( 'ICALCREATOR_VERSION', 'iCalcreator 2.39.1' );
+define( 'ICALCREATOR_VERSION', 'iCalcreator 2.41.71' );
+
 /**
  * load iCalcreator src and support classes and Traits
  */
@@ -47,26 +49,19 @@ spl_autoload_register(
         static $PREFIX  = 'Kigkonsult\\Icalcreator\\';
         static $SRC     = 'src';
         static $SRCDIR  = null;
-        static $TEST    = 'test';
-        static $TESTDIR = null;
-        if( is_null( $SRCDIR )) {
-            $SRCDIR  = __DIR__ . DIRECTORY_SEPARATOR . $SRC . DIRECTORY_SEPARATOR;
-            $TESTDIR = __DIR__ . DIRECTORY_SEPARATOR . $TEST . DIRECTORY_SEPARATOR;
-        }
-        if( 0 != strncmp( $PREFIX, $class, 23 ))
+        if( 0 !== strncmp( $PREFIX, $class, 23 )) {
             return false;
+        }
         $class = substr( $class, 23 );
-        if( false !== strpos( $class, $BS ))
+        if( false !== strpos( $class, $BS )) {
             $class = str_replace( $BS, DIRECTORY_SEPARATOR, $class );
+        }
+        if( null === $SRCDIR ) {
+            $SRCDIR  = __DIR__ . DIRECTORY_SEPARATOR . $SRC . DIRECTORY_SEPARATOR;
+        }
         $file = $SRCDIR . $class . $PHP;
         if( file_exists( $file )) {
             include $file;
-        }
-        else {
-            $file = $TESTDIR . $class . $PHP;
-            if( file_exists( $file )) {
-                include $file;
-            }
         }
     }
 );

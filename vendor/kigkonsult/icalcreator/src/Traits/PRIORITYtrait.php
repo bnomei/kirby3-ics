@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,7 +29,8 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
-use Kigkonsult\Icalcreator\Util\StringFactory;
+use Kigkonsult\Icalcreator\Formatter\Property\IntProperty;
+use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Util\Util;
 use Kigkonsult\Icalcreator\Util\ParameterFactory;
 use InvalidArgumentException;
@@ -37,14 +38,14 @@ use InvalidArgumentException;
 /**
  * PRIORITY property functions
  *
- * @since 2.27.2 2019-01-03
+ * @since 2.41.55 2022-08-13
  */
 trait PRIORITYtrait
 {
     /**
-     * @var array component property PRIORITY value
+     * @var null|Pc component property PRIORITY value
      */
-    protected $priority = null;
+    protected ? Pc $priority = null;
 
     /**
      * Return formatted output for calendar component property priority
@@ -53,20 +54,10 @@ trait PRIORITYtrait
      */
     public function createPriority() : string
     {
-        if( empty( $this->priority )) {
-            return Util::$SP0;
-        }
-        if( ! isset( $this->priority[Util::$LCvalue] ) ||
-            ( empty( $this->priority[Util::$LCvalue] ) &&
-                ! is_numeric( $this->priority[Util::$LCvalue] ))) {
-            return $this->getConfig( self::ALLOWEMPTY )
-                ? StringFactory::createElement( self::PRIORITY )
-                : Util::$SP0;
-        }
-        return StringFactory::createElement(
+        return IntProperty::format(
             self::PRIORITY,
-            ParameterFactory::createParams( $this->priority[Util::$LCparams] ),
-            $this->priority[Util::$LCvalue]
+            $this->priority,
+            $this->getConfig( self::ALLOWEMPTY )
         );
     }
 
@@ -86,41 +77,59 @@ trait PRIORITYtrait
      * Get calendar component property priority
      *
      * @param null|bool   $inclParam
-     * @return bool|array
-     * @since  2.27.1 - 2018-12-12
+     * @return bool|int|string|Pc
+     * @since 2.41.36 2022-04-03
      */
-    public function getPriority( $inclParam = false )
+    public function getPriority( ? bool $inclParam = false ) : bool | int | string | Pc
     {
         if( empty( $this->priority )) {
             return false;
         }
-        return ( $inclParam ) ? $this->priority : $this->priority[Util::$LCvalue];
+        return $inclParam ? clone $this->priority : $this->priority->value;
+    }
+
+    /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.43 2022-04-15
+     */
+    public function isPrioritySet() : bool
+    {
+        return ( ! empty( $this->priority->value ) ||
+            (( null !== $this->priority ) && ( 0 === $this->priority->value )));
     }
 
     /**
      * Set calendar component property priority
      *
-     * @param null|int   $value
+     * .. an integer in the range 0 to 9.
+     * A value of 0 specifies an undefined priority.
+     * A value of 1 is the highest priority.
+     * A value of 2 is the second highest priority.
+     * Subsequent numbers specify a decreasing ordinal priority.
+     * A value of 9 is the lowest priority.
+     *
+     * @param null|int|string|Pc $value
      * @param null|array $params
      * @return static
      * @throws InvalidArgumentException
-     * @since 2.27.2 2019-01-03
+     * @since 2.41.36 2022-04-03
      */
-    public function setPriority( $value = null, $params = [] ) : self
+    public function setPriority( null|int|string|Pc $value = null, ? array $params = [] ) : static
     {
-        if( empty( $value ) && ( Util::$ZERO != $value )) {
-            $this->assertEmptyValue( $value, self::PRIORITY );
-            $value  = Util::$SP0;
-            $params = [];
-
+        $value = ( $value instanceof Pc )
+            ? clone $value
+            : Pc::factory( $value, ParameterFactory::setParams( $params ));
+        if(( $value->value === null ) || ( Util::$SP0 === $value->value )) {
+            $this->assertEmptyValue( $value->value, self::PRIORITY );
+            $value->setEmpty();
         }
         else {
-            Util::assertInteger( $value, self::PRIORITY, 0, 9 );
+            Util::assertInteger( $value->value, self::PRIORITY, 0, 9 );
+            $value->value = (int) $value->value;
         }
-        $this->priority = [
-            Util::$LCvalue  => $value,
-            Util::$LCparams => ParameterFactory::setParams( $params ?? [] ),
-        ];
+        $this->priority = $value;
         return $this;
     }
 }

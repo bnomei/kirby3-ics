@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -30,22 +30,20 @@ declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator\Traits;
 
 use InvalidArgumentException;
+use Kigkonsult\Icalcreator\Formatter\Property\CalMetProVer;
 use Kigkonsult\Icalcreator\Util\Util;
-use Kigkonsult\Icalcreator\Vcalendar;
-
-use function sprintf;
 
 /**
  * CALSCALE property functions
  *
- * @since 2.29.14 2019-09-03
+ * @since 2.41.55 2022-08-13
  */
 trait CALSCALEtrait
 {
     /**
-     * @var string calendar property CALSCALE
+     * @var null|string calendar property CALSCALE
      */
-    protected $calscale = null;
+    protected ? string $calscale = null;
 
     /**
      * Return formatted output for calendar property calscale
@@ -54,10 +52,7 @@ trait CALSCALEtrait
      */
     public function createCalscale() : string
     {
-        if( empty( $this->calscale )) {
-            $this->calscale = Vcalendar::GREGORIAN;
-        }
-        return sprintf( self::$FMTICAL, self::CALSCALE, $this->calscale );
+        return CalMetProVer::format( self::CALSCALE, ( $this->calscale ?? self::GREGORIAN ));
     }
 
     /**
@@ -81,26 +76,37 @@ trait CALSCALEtrait
     public function getCalscale() : string
     {
         if( empty( $this->calscale )) {
-            $this->calscale = Vcalendar::GREGORIAN;
+            $this->calscale = self::GREGORIAN;
         }
         return $this->calscale;
     }
 
     /**
+     * Return bool true if set (and ignore empty property)
+     *
+     * @return bool
+     * @since 2.41.35 2022-03-28
+     */
+    public function isCalscaleSet() : bool
+    {
+        return ! empty( $this->calscale );
+    }
+
+    /**
      * Set calendar property calscale
      *
-     * @param string $value
+     * @param null|string $value
      * @return static
      * @throws InvalidArgumentException;
      * @since  2.29.14 - 2019-09-03
      */
-    public function setCalscale( $value ) : self
+    public function setCalscale( null|string $value = null ) : static
     {
         if( empty( $value )) {
-            $value = Vcalendar::GREGORIAN;
+            $value = self::GREGORIAN;
         }
         Util::assertString( $value, self::CALSCALE );
-        $this->calscale = (string) $value;
+        $this->calscale = $value;
         return $this;
     }
 }

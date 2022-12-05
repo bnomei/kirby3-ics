@@ -5,7 +5,7 @@
  * This file is a part of iCalcreator.
  *
  * @author    Kjell-Inge Gustafsson, kigkonsult <ical@kigkonsult.se>
- * @copyright 2007-2021 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
+ * @copyright 2007-2022 Kjell-Inge Gustafsson, kigkonsult, All rights reserved
  * @link      https://kigkonsult.se
  * @license   Subject matter of licence is the software iCalcreator.
  *            The above copyright, link, package and version notices,
@@ -29,30 +29,25 @@
 declare( strict_types = 1 );
 namespace Kigkonsult\Icalcreator;
 
-use Exception;
-
-use function sprintf;
-use function strtoupper;
-
 /**
  * iCalcreator (Vtimezone) Daylight/Standard base component class
  *
- * @since  2.29.11 - 2019-08-30
+ * @since 2.41.55 2022-08-13
  */
 abstract class DScomponent extends CalendarComponent
 {
-    use Traits\COMMENTtrait,
-        Traits\DTSTARTtrait,
-        Traits\RDATEtrait,
-        Traits\RRULEtrait,
-        Traits\TZNAMEtrait,
-        Traits\TZOFFSETFROMtrait,
-        Traits\TZOFFSETTOtrait;
+    use Traits\COMMENTtrait;
+    use Traits\DTSTARTtrait;
+    use Traits\RDATEtrait;
+    use Traits\RRULEtrait;
+    use Traits\TZNAMEtrait;
+    use Traits\TZOFFSETFROMtrait;
+    use Traits\TZOFFSETTOtrait;
 
     /**
      * @var string
      */
-    protected static $compSgn = 'ds';
+    protected static string $compSgn = 'ds';
 
     /**
      * Destructor
@@ -64,7 +59,6 @@ abstract class DScomponent extends CalendarComponent
             $this->compType,
             $this->xprop,
             $this->components,
-            $this->unparsed,
             $this->config,
             $this->propIx,
             $this->compix,
@@ -83,27 +77,5 @@ abstract class DScomponent extends CalendarComponent
             $this->tzoffsetfrom,
             $this->tzoffsetto
         );
-    }
-
-    /**
-     * Return formatted output for calendar component VTIMEZONE Daylight/Standard object instances
-     *
-     * @return string
-     * @throws Exception  (on Rdate err)
-     * @since  2.29.11 - 2019-08-30
-     */
-    public function createComponent() : string
-    {
-        $compType    = strtoupper( $this->getCompType());
-        $component   = sprintf( self::$FMTBEGIN, $compType );
-        $component  .= $this->createTzname();
-        $component  .= $this->createDtstart();
-        $component  .= $this->createTzoffsetfrom();
-        $component  .= $this->createTzoffsetto();
-        $component  .= $this->createRdate();
-        $component  .= $this->createRrule();
-        $component  .= $this->createComment();
-        $component  .= $this->createXprop();
-        return $component . sprintf( self::$FMTEND, $compType );
     }
 }
