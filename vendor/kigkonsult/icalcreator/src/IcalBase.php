@@ -59,7 +59,7 @@ use function ucfirst;
  *         Do NOT alter or remove the constant!!
  */
 if( ! defined( 'ICALCREATOR_VERSION' )) {
-    define( 'ICALCREATOR_VERSION', 'iCalcreator 2.41.74' );
+    define( 'ICALCREATOR_VERSION', 'iCalcreator 2.41.80' );
 }
 
 /**
@@ -131,7 +131,7 @@ abstract class IcalBase implements IcalInterface
      * @return bool
      * @since 2.41.68 2022-10-03
      */
-    protected static function isCalendarSubComp( string $compName ) : bool
+    public static function isCalendarSubComp( string $compName ) : bool
     {
         static $CALCOMPS = [
             self::AVAILABLE,
@@ -151,6 +151,7 @@ abstract class IcalBase implements IcalInterface
 
     /**
      * Return bool true if component has the UID property
+     *
      * @param IcalBase $component
      * @return bool
      * @since 2.47.68 2022-10-01
@@ -236,7 +237,7 @@ abstract class IcalBase implements IcalInterface
     protected array $components = [];
 
     /**
-     * @var mixed[] $config configuration with defaults
+     * @var array $config configuration with defaults
      */
     protected array $config = [
         self::ALLOWEMPTY => true,
@@ -418,7 +419,7 @@ abstract class IcalBase implements IcalInterface
     /**
      * Return array( propertyName => count )
      *
-     * @return mixed[]
+     * @return array
      * @since 2.41.51 2022-08-09
      */
     protected function getpropInfo() : array
@@ -466,9 +467,9 @@ abstract class IcalBase implements IcalInterface
     /**
      * Set Vcalendar/component config
      *
-     * @param string|string[] $config
-     * @param null|bool|string|mixed[] $value
-     * @param bool            $softUpdate
+     * @param string|string[]        $config
+     * @param null|bool|string|array $value
+     * @param bool                   $softUpdate
      * @return static
      * @throws InvalidArgumentException
      * @since  2.40.11 - 2022-01-25
@@ -663,7 +664,9 @@ abstract class IcalBase implements IcalInterface
                         ++$cix1gC;
                     }
                     break;
-                case ( ! $argType && ( $arg1 === $this->components[$cix]->getUid())) :
+                case ( ! $argType &&
+                    self::hasUid( $this->components[$cix] ) &&
+                    ( $arg1 === $this->components[$cix]->getUid())) :
                     if( $index === $cix1gC ) {
                         return clone $this->components[$cix];
                     }
@@ -705,7 +708,7 @@ abstract class IcalBase implements IcalInterface
      * @param CalendarComponent $component
      * @param string[]          $argList
      * @return bool
-     * @since  2.47.68 - 2022-10-03
+     * @since  2.47.76 - 2023-04-29
      */
     protected static function isFoundInCompsProps(
         CalendarComponent $component,
@@ -713,7 +716,7 @@ abstract class IcalBase implements IcalInterface
     ) : bool
     {
         foreach( $argList as $propName => $propValue ) {
-            if( in_array( $propName, [ self::ATTENDEE, self::CONTACT, self::ORGANIZER ], true ) ) {
+            if( in_array( $propName, [ self::ATTENDEE, self::CONTACT, self::ORGANIZER ], true )) {
                 $propValue = CalAddressFactory::conformCalAddress( $propValue );
             }
             switch( true ) {
@@ -737,7 +740,7 @@ abstract class IcalBase implements IcalInterface
             if( false === ( $value = $component->{$method}())) { // single occurrence
                 continue; // missing/empty property
             }
-            switch( true ) {
+                switch( true ) {
                 case ( self::SUMMARY === $propName ) : // exists in (any case)
                     if( false !== stripos( $value, $propValue )) {
                         return true;
@@ -760,10 +763,8 @@ abstract class IcalBase implements IcalInterface
                 $part = ( is_string( $part ) && ( str_contains( $part, Util::$COMMA )))
                     ? explode( Util::$COMMA, $part )
                     : [ $part ];
-                foreach( $part as $subPart ) {
-                    if( $propValue == $subPart ) { // note ==
-                        return true;
-                    }
+                if( in_array( $propValue, $part )) {  // note no true
+                    return true;
                 }
             } // end foreach( $value as $part )
         } // end  foreach( $arg1 as $propName => $propValue )

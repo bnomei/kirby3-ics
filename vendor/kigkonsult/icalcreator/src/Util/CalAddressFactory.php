@@ -35,7 +35,7 @@ use Kigkonsult\Icalcreator\IcalInterface;
 use Kigkonsult\Icalcreator\Pc;
 use Kigkonsult\Icalcreator\Vcalendar;
 use Kigkonsult\Icalcreator\Vevent;
-
+use function array_merge;
 use function in_array;
 use function method_exists;
 use function sprintf;
@@ -47,10 +47,21 @@ use function trim;
 /**
  * iCalcreator attendee support class
  *
- * @since 2.41.68 - 2022-10-21
+ * @since  2.41.80 - 2023-06-27
  */
 class CalAddressFactory
 {
+    /**
+     * Protocols
+     *
+     * @var string[]
+     */
+    public static array $PROTO3 = [ 'cid:', 'sms:', 'tel:', 'urn:' ];
+    public static array $PROTO4 = [ 'crid:', 'news:', 'pres:', 'http:', ':http:' ];
+    public static array $PROTO5 = [ 'https:' ];
+    public static array $PROTO6 = [ 'mailto:', 'telnet:' ];
+    public static array $PROTO7 = [ 'message:' ];
+
     /**
      * @var string[]
      */
@@ -62,7 +73,7 @@ class CalAddressFactory
     ];
 
     /**
-     * @var string Prefix for Ical cal-address etc
+     * @var string Prefix (protocol) for Ical cal-address etc
      * @since 2.41.52  2022-08-06
      */
     public  static string $MAILTOCOLON = 'mailto:';
@@ -124,13 +135,41 @@ class CalAddressFactory
     }
 
     /**
+     * Return bool true if string starts with protocol
+     *
+     * @param string $value
+     * @return bool
+     * @since  2.41.80 - 2023-06-27
+     */
+    public static function hasProtocolPrefix( string $value ) : bool
+    {
+        static $PROTOCOLS = null;
+        if( null === $PROTOCOLS ) {
+            $PROTOCOLS = array_merge(
+                self::$PROTO3,
+                self::$PROTO4,
+                self::$PROTO5,
+                self::$PROTO6,
+                self::$PROTO7,
+            );
+        }
+        $cmpValue = strtolower( $value );
+        foreach( $PROTOCOLS as $prtcl ) {
+            if( str_starts_with( $cmpValue, $prtcl )) {
+                return true;
+            }
+        } // end foreach
+        return false;
+    }
+
+    /**
      * Return bool true if email has leading mailto:
      *
      * @param string $email
      * @return bool
-     * @since  2.27.8 - 2019-03-17
+     * @since  2.41.80 - 2023-06-27
      */
-    private static function hasMailtoPrefix( string $email ) : bool
+    public static function hasMailtoPrefix( string $email ) : bool
     {
         return ( 0 === strcasecmp( self::$MAILTOCOLON, substr( $email, 0, 7 )));
     }
@@ -316,9 +355,9 @@ class CalAddressFactory
      *
      * @param CalendarComponent|Vevent $component  iCalcreator Vcalendar component instance
      * @return string[]
-     * @since  2.41.36 - 2022-04-03
+     * @since  2.41.76 - 2023-04-29
      */
-    public static function getCalAdressesAllFromAttendee( CalendarComponent $component ) : array
+    public static function getCalAdressesAllFromAttendee( CalendarComponent|Vevent $component ) : array
     {
         $output = [];
         foreach( $component->getAllAttendee( true ) as $propValue ) {
@@ -334,10 +373,9 @@ class CalAddressFactory
                     case IcalInterface::MEMBER:       // fall through
                     case IcalInterface::DELEGATED_TO: // fall through
                     case IcalInterface::DELEGATED_FROM:
-                        $params2[$pLabel] = [];
                         foreach( $pValue as $pValue2 ) {
                             $pValue2 = self::removeMailtoPrefix( trim( $pValue2, StringFactory::$QQ ));
-                            if( !in_array( $pValue2, $output, true )) {
+                            if( ! in_array( $pValue2, $output, true )) {
                                 $output[] = $pValue2;
                             }
                         } // end foreach
@@ -364,7 +402,7 @@ class CalAddressFactory
      * @return string[]
      * @since  2.41.36 - 2022-04-03
      */
-    public static function getCalAdressesAllFromOrganizer( CalendarComponent $component ) : array
+    public static function getCalAdressesAllFromOrganizer( CalendarComponent|Vevent $component ) : array
     {
         if(( false === ( $propValue = $component->getOrganizer( true ))) ||
             empty( $propValue )) {
@@ -393,7 +431,7 @@ class CalAddressFactory
      * @return string[]
      * @since  2.29 - 2021-06-19
      */
-    public static function getCalAdressesAllFromContact( CalendarComponent $component ) : array
+    public static function getCalAdressesAllFromContact( CalendarComponent|Vevent $component ) : array
     {
         $output = [];
         foreach( $component->getAllContact( true ) as $propValue ) {

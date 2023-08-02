@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'bnomei/kirby3-ics',
-        'pretty_version' => '1.0.6',
-        'version' => '1.0.6.0',
+        'pretty_version' => '1.0.7',
+        'version' => '1.0.7.0',
         'reference' => NULL,
         'type' => 'kirby-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'bnomei/kirby3-ics' => array(
-            'pretty_version' => '1.0.6',
-            'version' => '1.0.6.0',
+            'pretty_version' => '1.0.7',
+            'version' => '1.0.7.0',
             'reference' => NULL,
             'type' => 'kirby-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -29,9 +29,9 @@
             'dev_requirement' => false,
         ),
         'kigkonsult/icalcreator' => array(
-            'pretty_version' => 'v2.41.74',
-            'version' => '2.41.74.0',
-            'reference' => '35b57afc03c07ff8e213ebda7c50f37f70d54526',
+            'pretty_version' => 'v2.41.80',
+            'version' => '2.41.80.0',
+            'reference' => 'a15c9b48caa2b50e077f5a9595f889c965d58667',
             'type' => 'library',
             'install_path' => __DIR__ . '/../kigkonsult/icalcreator',
             'aliases' => array(),

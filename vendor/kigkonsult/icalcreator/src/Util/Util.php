@@ -122,7 +122,7 @@ class Util
         if( empty( $array ) || ! is_array( $array )) {
             return false;
         }
-        return ( isset( $array[$key] ) && ! empty( $array[$key] ));
+        return ( ! empty( $array[$key] ) );
     }
 
     /**
@@ -153,7 +153,7 @@ class Util
      * @param null|int $rangeMax
      * @return void
      * @throws InvalidArgumentException
-     * @since  2.27.14 - 2019-02-19
+     * @since  2.41.79 - 2023-06-27
      */
     public static function assertInteger(
         mixed $value,
@@ -164,7 +164,10 @@ class Util
     {
         static $ERR1 = '%s expects integer value, got %s';
         static $ERR2 = '%s value %s not in range (%d-%d)';
-        if( ! is_scalar( $value ) || ! ctype_digit( (string) $value )) {
+        if( is_string( $value )) {
+            $value = trim( $value );
+        }
+        if( ! is_scalar( $value ) || ! ctype_digit((string) $value )) {
             throw new InvalidArgumentException(
                 sprintf( $ERR1, $propName, var_export( $value, true ))
             );
