@@ -29,10 +29,6 @@ Generate ICS Files.
 - `git submodule add https://github.com/bnomei/kirby3-ics.git site/plugins/kirby3-ics` or
 - `composer require bnomei/kirby3-ics`
 
-## Works well with
-
-- [Calendar](https://github.com/bnomei/kirby3-calendar)
-
 ## Usecase
 
 ### Plain PHP
